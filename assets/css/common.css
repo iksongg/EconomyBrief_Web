@@ -1,0 +1,209 @@
+/*
+  EconomyBrief — shared UI components
+  Reused across index.html, main.html, newsfeed.html, article.html,
+  daily-briefing.html, deep-research.html.
+  Loaded together with assets/js/common.js, which injects the markup
+  for any element tagged with a data-eb="..." attribute.
+*/
+
+/* ---- Google Material Symbols icon glyphs (see assets/js/icons.js) ---- */
+.gicon {
+  font-family: 'Material Symbols Rounded';
+  font-weight: normal;
+  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+  font-style: normal;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: currentColor;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* ---- small trailing chevron icon ("더보기 >", "전체 내역 >", row-item
+   arrows, etc.) — a real Material Symbols glyph (arrow_forward_ios) like
+   every other icon in the app, sized uniformly wherever it's used. Each
+   page still sets its own color via its own context selector. ---- */
+.chev-icon { font-size: 24px; width: 24px; height: 24px; }
+
+/* ---- placeholder shown instead of a missing article thumbnail/logo (see
+   EB.media in common.js) — for anything data/news.json hasn't gotten a
+   real image/logo asset for yet. Every page using EB.media.apply() gets
+   this same look; each page still sets its own width/height on these two
+   classes to match its own thumb/logo size (e.g. `.eb-thumb-placeholder {
+   width: 61px; height: 61px; }`), the way it already sizes the real
+   .thumb/.tl-thumb image these replace. ---- */
+.eb-thumb-placeholder {
+  background: #F1F2F5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.eb-thumb-placeholder .gicon { font-size: 22px; width: 22px; height: 22px; color: #C2C6D1; }
+.eb-logo-placeholder {
+  width: 16px; height: 16px; border-radius: 4px; background: #E2E4E9; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 9px; line-height: 1; font-weight: 700; color: #8A8F99; overflow: hidden;
+}
+
+/* ---- press-logo component (data-eb="press-logo") — 16x16 outlet logo used
+   in every byline; self-contained sizing so it looks right regardless of
+   which list/card it's dropped into. See assets/js/common.js. ---- */
+.eb-press-logo { width: 16px; height: 16px; object-fit: contain; border-radius: 4px; flex-shrink: 0; }
+
+/* ---- shared toast (nav-header 공유 버튼의 "링크 복사됨" 안내 등) — 항상
+   .device(고정 모바일 프레임) 안쪽 하단에 뜬다 ---- */
+.eb-toast {
+  position: absolute; left: 50%; bottom: 100px; transform: translate(-50%, 8px);
+  max-width: calc(100% - 40px); padding: 12px 20px; border-radius: 999px;
+  background: rgba(0,0,0,0.8); color: #fff; font-size: 14px; text-align: center;
+  opacity: 0; visibility: hidden; transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 999; pointer-events: none;
+}
+.eb-toast.visible { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+
+/* ---- device frame (shared page shell) ---- */
+.device {
+  position: relative;
+  width: 100%;
+  max-width: 402px;
+  min-height: 100dvh;
+  height: 100dvh;
+  background: #ffffff;
+  overflow: hidden;
+}
+.scroll-area {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.scroll-area::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ---- status bar: dynamic island (main / newsfeed / daily-briefing / deep-research) ---- */
+.status-bar-dynamic {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 50px; padding-top: 2px; width: 100%; background: #ffffff;
+}
+.status-bar-dynamic .row { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.status-bar-dynamic .time {
+  flex: 1 0 0; display: flex; align-items: center; justify-content: center;
+  padding: 0 6px 0 16px; font-weight: var(--font-weight-semibold); font-size: 17px; color: #000;
+}
+.status-bar-dynamic .island-spacer { width: 124px; height: 10px; }
+.status-bar-dynamic .levels { flex: 1 0 0; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 0 16px 0 6px; color: #000; }
+
+/* ---- status bar: simple pill (onboarding / article) ---- */
+.status-bar-simple { position: relative; width: 100%; height: 62px; background: #ffffff; }
+.status-bar-simple .time {
+  position: absolute; left: 24px; top: 21px; width: 100px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: var(--font-weight-semibold); font-size: 17px; color: #000000;
+}
+.status-bar-simple .levels { position: absolute; right: 24px; top: 21px; width: 100px; height: 22px; }
+.status-bar-simple .levels img { display: block; width: 100%; height: 100%; }
+
+/* ---- main header row: logo + search/notifications (main / newsfeed) ---- */
+.header-row-main {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 48px; padding: 0 20px; background: #ffffff;
+}
+.header-row-main .logo { font-weight: var(--font-weight-bold); font-size: 24px; line-height: 23px; color: #000000; text-transform: uppercase; white-space: nowrap; }
+.header-row-main .icons { display: flex; align-items: center; gap: 12px; height: 48px; color: #000; }
+
+/* ---- nav header: back + title + share/bookmark (article / daily-briefing / deep-research) ---- */
+.nav-header-common { background: #fff; display: flex; align-items: center; justify-content: space-between; height: 60px; padding: 0 20px; }
+.nav-header-common.short { height: 48px; }
+.nav-header-common .icon-btn { width: 24px; height: 24px; background: none; border: none; padding: 0; cursor: pointer; display: block; text-decoration: none; color: #000; }
+.nav-header-common .icon-spacer { width: 24px; height: 24px; }
+.nav-header-common .title { font-weight: var(--font-weight-semibold); font-size: 16px; color: #0D0D14; }
+.nav-header-common .nav-text-btn {
+  background: none; border: none; padding: 0; cursor: pointer; font-family: inherit;
+  font-weight: var(--font-weight-semibold); font-size: 16px; color: #000; white-space: nowrap;
+}
+
+/* ---- bottom GNB tab bar (main / newsfeed) ----
+   Always pinned to the bottom of .device — pages using it should add
+   padding-bottom: 90px to their .scroll-area so content isn't hidden under it. */
+.gnb-tab-bar {
+  position: absolute; left: 0; bottom: 0; width: 100%; z-index: 5;
+  background: #fff; border-top: 1px solid #DBDBDB;
+  display: flex; align-items: center; justify-content: center;
+  height: 90px; padding-bottom: 20px;
+}
+.gnb-tab-bar .tab-item {
+  flex: 1 0 0; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  height: 48px; text-decoration: none; color: #B5BAC5;
+}
+.gnb-tab-bar .tab-item svg { width: 24px; height: 24px; display: block; fill: currentColor; }
+.gnb-tab-bar .tab-item span { font-size: 14px; line-height: 1.3; font-weight: var(--font-weight-regular); color: inherit; }
+.gnb-tab-bar .tab-item.active { color: var(--color-brand-600); }
+.gnb-tab-bar .tab-item.active span { font-weight: var(--font-weight-bold); }
+
+/* Prevent page-level horizontal overflow at any viewport width. */
+html, body { width: 100%; min-width: 0; overflow-x: hidden; }
+
+/* ---- 한글 단어 단위 줄바꿈 ----
+   기본값(word-break: normal)은 한글을 음절 단위로 쪼개 줄바꿈해 "분위기"가
+   "분위"/"기"처럼 잘리는 문제가 있다. keep-all로 어절 단위 줄바꿈을 유지하고,
+   그래도 화면 폭을 넘는 긴 단어(영문 URL 등)만 overflow-wrap으로 강제
+   줄바꿈한다. word-break/overflow-wrap은 상속 속성이라 body에서 전체
+   본문에 적용되며, white-space: nowrap이 걸린 로고/뱃지/말줄임 요소는
+   애초에 줄바꿈이 발생하지 않으므로 영향받지 않는다. */
+body { word-break: keep-all; overflow-wrap: break-word; }
+
+/* ---- desktop pointer cursor for clickable elements ----
+   Native <button>/<a href> don't always get a pointer cursor by default
+   (buttons default to the arrow cursor); mobile behavior is unaffected since
+   touch devices ignore :hover/cursor entirely. .story is the one div-based
+   custom clickable element (main.html) without a native cursor. */
+button:not(:disabled), a[href], .story { cursor: pointer; }
+
+/* ---- shared toggle switch (알림설정 등) ---- */
+.eb-toggle { position: relative; display: inline-block; width: 44px; height: 26px; flex-shrink: 0; }
+.eb-toggle input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.eb-toggle .track {
+  position: absolute; inset: 0; background: #E6E7EB; border-radius: 999px;
+  transition: background 0.15s ease;
+}
+.eb-toggle .thumb {
+  position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25); transition: transform 0.15s ease;
+}
+.eb-toggle input:checked ~ .track { background: var(--color-brand-600); }
+.eb-toggle input:checked ~ .thumb { transform: translateX(18px); }
+.eb-toggle input:focus-visible ~ .track { outline: 2px solid var(--color-brand-400); outline-offset: 2px; }
+
+/* ---- mypage 설정 반영 범위: 공용 헤더/GNB로 한정 ----
+   design-system/tokens/colors.css에는 Dark 값이 없고, 각 페이지 본문은 CSS
+   변수가 아니라 페이지별 <style>에 색을 직접 적어둔 구조라, 앱 전체를 다시
+   칠하는 완전한 다크모드/전역 글자 크기 확대는 이 구조를 바꾸지 않는 한 불가능
+   하다(각 페이지 redesign 금지 범위와 충돌). 대신 실제로 모든 페이지가 공유하는
+   컴포넌트(nav-header/tab-bar/공용 배경)에만 정확히 반영한다. */
+html[data-eb-theme="dark"] body { background: #000000; }
+html[data-eb-theme="dark"] .device { background: #121212; }
+html[data-eb-theme="dark"] .nav-header-common,
+html[data-eb-theme="dark"] .header-row-main,
+html[data-eb-theme="dark"] .gnb-tab-bar { background: #1C1C1E; }
+html[data-eb-theme="dark"] .nav-header-common .title,
+html[data-eb-theme="dark"] .header-row-main .logo { color: #FFFFFF; }
+html[data-eb-theme="dark"] .nav-header-common .icon-btn,
+html[data-eb-theme="dark"] .nav-header-common .nav-text-btn,
+html[data-eb-theme="dark"] .header-row-main .icons { color: #FFFFFF; }
+html[data-eb-theme="dark"] .gnb-tab-bar { border-top-color: #333333; }
+html[data-eb-theme="dark"] .gnb-tab-bar .tab-item { color: #7C7C82; }
+html[data-eb-theme="dark"] .gnb-tab-bar .tab-item.active { color: var(--color-brand-400); }
+
+html[data-eb-font-scale="sm"] .nav-header-common .title,
+html[data-eb-font-scale="sm"] .gnb-tab-bar .tab-item span { font-size: 0.9em; }
+html[data-eb-font-scale="lg"] .nav-header-common .title,
+html[data-eb-font-scale="lg"] .gnb-tab-bar .tab-item span { font-size: 1.15em; }

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="favicon.ico" />
+<title>이코노미브리프 - 언어 설정</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<link rel="stylesheet" href="design-system/tokens/colors.css" />
+<link rel="stylesheet" href="design-system/tokens/typography.css" />
+<link rel="stylesheet" href="design-system/tokens/layout.css" />
+<link rel="stylesheet" href="assets/css/common.css" />
+<link rel="stylesheet" href="assets/css/device-mockup.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-family-base);
+    background: #EAEBEF;
+    min-height: 100dvh;
+    display: flex; align-items: flex-start; justify-content: center;
+  }
+  .scroll-area { padding-bottom: 20px; }
+  .section-white { background: #ffffff; padding: 20px; }
+
+  .lang-option {
+    display: flex; align-items: center; justify-content: space-between; width: 100%;
+    padding: 16px; border-radius: 16px; border: 1px solid var(--color-border-default);
+    background: none; font-family: inherit; cursor: pointer; text-align: left; margin-bottom: 12px;
+  }
+  .lang-option:last-child { margin-bottom: 0; }
+  .lang-option.active { border-color: var(--color-brand-600); background: #F3F6FF; }
+  .lang-option .option-label { font-weight: var(--font-weight-semibold); font-size: 14px; color: #000; }
+  .lang-option .option-desc { font-weight: var(--font-weight-regular); font-size: 12px; color: #5B5E73; margin-top: 2px; }
+  .lang-option .check-icon { font-size: 22px; width: 22px; height: 22px; color: var(--color-brand-600); visibility: hidden; }
+  .lang-option.active .check-icon { visibility: visible; }
+
+  .scope-note { margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: #F8F8FC; font-size: 12px; color: #5B5E73; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="portfolio-stage">
+<div class="iphone-device">
+<div class="device-bezel">
+<div class="app-screen">
+<div class="dynamic-island"></div>
+<div class="ios-status-bar">
+  <span class="status-time">9:41</span>
+  <div class="status-icons">
+    <img src="assets/img/icons/status-bar-levels.svg" alt="" width="100" height="22" />
+  </div>
+</div>
+
+<div class="device">
+  <div class="scroll-area">
+
+    <div data-eb="nav-header" data-title="언어 설정" data-back="mypage.html" data-right="none" data-short="true"></div>
+
+    <div class="section-white">
+      <button type="button" class="lang-option" data-lang="ko">
+        <div><div class="option-label">한국어</div><div class="option-desc">Korean</div></div>
+        <span class="gicon check-icon" role="img" aria-label="">check_circle</span>
+      </button>
+      <button type="button" class="lang-option" data-lang="en">
+        <div><div class="option-label">English</div><div class="option-desc">영어</div></div>
+        <span class="gicon check-icon" role="img" aria-label="">check_circle</span>
+      </button>
+      <div class="scope-note" id="scope-note">현재 프로토타입은 한국어 콘텐츠로만 제작되어 있습니다. 언어 선택은 저장되지만, 실제 전체 화면 번역은 이번 버전에서 제공하지 않습니다.</div>
+    </div>
+
+  </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<script src="assets/js/device-mockup.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+  var settings = EB.settings.load();
+  function render() {
+    document.querySelectorAll('.lang-option').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-lang') === settings.language);
+    });
+  }
+  document.querySelectorAll('.lang-option').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var lang = btn.getAttribute('data-lang');
+      settings = EB.settings.update(function (state) { state.language = lang; });
+      render();
+      if (lang === 'en') EB.showToast('English content is not available yet');
+    });
+  });
+  render();
+</script>
+
+</body>
+</html>

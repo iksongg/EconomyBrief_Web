@@ -1,0 +1,50 @@
+/*
+  Color tokens — EconomyBrief Design System
+  Source: Figma "디자인시스템" > 02. Color
+  Values below are Light mode HEX. The Figma board notes each token also
+  carries a Dark mode value bound via Figma variables, but those Dark
+  values are not exposed as text content on the board and could not be
+  extracted from metadata — pull them directly from Figma variables if
+  Dark mode support is implemented.
+*/
+
+:root {
+  /* Brand — primary blue ramp. 600 is the base brand color. */
+  --color-brand-600: #2461FA;
+  --color-brand-500: #3784FF;
+  --color-brand-400: #82B0F9;
+  --color-brand-300: #9FC3FB;
+  --color-brand-200: #BFD7FD;
+
+  /* Text — body hierarchy, Primary -> Tertiary descending importance. */
+  --color-text-primary: #000000;
+  --color-text-secondary: #424350;
+  --color-text-tertiary: #888888;
+  --color-text-disabled: #BDBDBD;
+  --color-text-inverse: #FFFFFF; /* use only on dark surfaces */
+
+  /* Background & Border */
+  --color-background-primary: #FAFAFA;
+  --color-background-secondary: #FFFFFF;
+  --color-background-elevated: #FAFAFA;
+  --color-border-default: #E6E7EB;
+
+  /* Status — alerts, toasts, inline messages only */
+  --color-status-success: #22C55E;
+  --color-status-warning: #F59E0B;
+  --color-status-error: #EF4444;
+
+  /* Status 2 — fill/bg pairs for tags & badges. Always use a fill with its matching bg. */
+  --color-status2-red-fill: #E45C6B;
+  --color-status2-red-bg: #FFF1F2;
+  --color-status2-yellow-fill: #E58A00;
+  --color-status2-yellow-bg: #FFF3E8;
+  --color-status2-green-fill: #1FA971;
+  --color-status2-green-bg: #ECF8F1;
+  --color-status2-blue-fill: #3D7DFF;
+  --color-status2-blue-bg: #EAF2FF;
+  --color-status2-purple-fill: #5B6CFF;
+  --color-status2-purple-bg: #EEF0FF;
+  --color-status2-gray-fill: #5F738C;
+  --color-status2-gray-bg: #F3F4F6;
+}

@@ -1,0 +1,643 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="favicon.ico" />
+<title>이코노미브리프 - 데일리브리핑</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<link rel="stylesheet" href="design-system/tokens/colors.css" />
+<link rel="stylesheet" href="design-system/tokens/typography.css" />
+<link rel="stylesheet" href="design-system/tokens/layout.css" />
+<link rel="stylesheet" href="assets/css/common.css" />
+<link rel="stylesheet" href="assets/css/device-mockup.css" />
+<link rel="stylesheet" href="assets/css/term-sheet.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-family-base);
+    background: #EAEBEF;
+    min-height: 100dvh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .device { background: #fff; height: max(100dvh, 874px); }
+
+  .screen { position: absolute; inset: 0; display: none; }
+  .screen.active { display: block; }
+
+  /* ---- progress block ---- */
+  .progress-block {
+    width: 362px;
+    display: flex; flex-direction: column; gap: 10px;
+    margin: 12px auto;
+    z-index: 3;
+  }
+  .progress-block .counter-row { display: flex; align-items: center; justify-content: space-between; font-size: 14px; }
+  .progress-block .counter-row.end-only { justify-content: flex-end; }
+  .progress-block .count-current { color: var(--color-brand-600); font-weight: var(--font-weight-semibold); }
+  .progress-block .count-total { color: #7A7A7A; font-weight: var(--font-weight-regular); }
+  .progress-block .eta { color: var(--color-brand-600); font-weight: var(--font-weight-bold); }
+  .progress-block .done-label { color: var(--color-brand-600); font-weight: var(--font-weight-bold); }
+  .progress-track { width: 100%; height: 10px; border-radius: 999px; background: #EEE; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 999px; background: var(--color-brand-600); transition: width 0.35s ease; }
+  .progress-block ul {
+    list-style: disc; margin: 0; padding-left: 18px;
+    color: #5B5E73; font-size: 12px; font-weight: var(--font-weight-regular); line-height: 1.6;
+  }
+
+  /* ---- card stack (reading state) ---- */
+  .card-stack { position: relative; top: 50px; left: 0; width: 402px; height: 632px; margin: 0 auto; float: left; }
+  /* peek sheets: left/top/width/color/opacity match the Figma node
+     (get_design_context on 4909:38509) exactly. Height does NOT — Figma's
+     own static frame only draws these 78px tall because that's a resting
+     screenshot where the main card covers the rest anyway, but this app
+     also exposes them mid-drag (see setupSwipe's rotate/translate), where a
+     78px-tall sheet reads as a page cut off partway down. Reusing the main
+     card's own height (602px, same value as .reading-card below) keeps them
+     full pages regardless of how far the drag reveals them. */
+  .peek-back {
+    position: absolute; background: #d9d9d9; opacity: 0.5; border-radius: 10px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.08);
+    left: 38px; top: 0px; width: 321px; height: 602px;
+    transition: left 0.28s ease, top 0.28s ease, width 0.28s ease, opacity 0.28s ease;
+  }
+  .peek-front {
+    position: absolute; background: #dbdbdb; opacity: 1; border-radius: 10px;
+    box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    left: 27px; top: 14px; width: 342px; height: 602px;
+    transition: left 0.28s ease, top 0.28s ease, width 0.28s ease, opacity 0.28s ease;
+  }
+  /* stack "advances": each sheet slides forward one slot, like flipping to the next A4 page */
+  .peek-back.advance { left: 27px; top: 14px; width: 342px; opacity: 1; }
+  .peek-front.advance { left: 17px; top: 30px; width: 362px; opacity: 1; }
+  .peek-back.no-anim, .peek-front.no-anim { transition: none !important; }
+
+  .reading-card {
+    position: absolute;
+    left: 17px; top: 30px; width: 362px; height: 602px;
+    background: #ffffff; border-radius: 10px;
+    box-shadow: 0 0 7.5px rgba(0,0,0,0.15);
+    padding: 0 20px; overflow: hidden;
+    display: flex; flex-direction: column; gap: 15px;
+    cursor: grab;
+    touch-action: pan-y;
+    z-index: 2;
+  }
+  .reading-card.dragging { cursor: grabbing; transition: none !important; }
+  .reading-card.animating { transition: transform 0.3s ease, opacity 0.3s ease; }
+  .reading-card.no-anim { transition: none !important; }
+  .reading-card img { -webkit-user-drag: none; user-select: none; }
+
+  .article-head { display: flex; flex-direction: column; gap: 11px; }
+  .article-head .headline-wrap {
+    border-bottom: 2px solid var(--color-border-default);
+    padding: 20px 0;
+    display: flex; align-items: center; justify-content: left;
+  }
+  .article-head .headline { font-weight: var(--font-weight-semibold); font-size: 24px; color: #000; line-height: 1.3; }
+  .article-head .subhead { font-weight: var(--font-weight-semibold); font-size: 14px; color: #000; line-height: 1.3; }
+
+  .article-body-wrap { display: flex; flex-direction: column; gap: 27px; flex: 1; min-height: 0; overflow-y: auto; }
+  .article-media-wrap { display: flex; flex-direction: column; gap: 15px; }
+  /* A fixed height:180px with width:100% left the box's aspect ratio dependent
+     on viewport width — at the 402px reference it happens to match this photo's
+     own ratio (43:24) almost exactly, but at the narrower widths the reading
+     card resizes to (@media above), the box got visibly squatter than the
+     photo and object-fit:cover cropped increasingly more off the sides. Locking
+     the box to that same 43:24 ratio keeps the crop identical at every width —
+     at 402px it renders pixel-for-pixel the same as the old height:180px did. */
+  .article-image { width: 100%; aspect-ratio: 43 / 24; object-fit: cover; border-radius: 8px; }
+  /* Wrapping <a> is block-level (its own default is inline) purely so it
+     doesn't change the image's box/flow — no visual treatment added. */
+  .article-image-link { display: block; }
+  .article-body { font-weight: var(--font-weight-regular); font-size: 14px; color: #000; line-height: 1.6; }
+  .article-body .term-link {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-brand-600);
+    text-decoration: underline;
+    cursor: pointer;
+    background: none; border: none; font-family: inherit; font-size: inherit; padding: 0;
+  }
+
+  /* Figma (get_design_context) has this as w-full, not a fixed px — the 174px
+     here was stale/arbitrary and caused long related-item labels to wrap. */
+  .related-list { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+  /* .related-item is an <a> now (see renderArticle) so the whole icon+text
+     row is one click target; reset the browser's default link underline/
+     color here so a real href doesn't change how the row looks. */
+  .related-list .related-item { display: flex; gap: 2px; align-items: center; color: inherit; text-decoration: none; }
+  /* Figma's related-item icon is an outline ring + matching triangle (not a
+     solid disc), in a muted steel-blue (#95a9be, sampled directly from the
+     reference — no existing brand/gray token matches this specific tone).
+     FILL 0 switches the glyph from solid-disc to the outline variant. */
+  .related-list .gicon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; color: #95a9be; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
+  .related-list span { font-size: 12px; color: #000; line-height: 1.6; }
+
+  /* term bottom sheet: see assets/css/term-sheet.css (shared component).
+     Now a direct child of #screen-reading (== .device's own box) so the dim
+     covers the whole screen and the sheet's bottom:0 lands on the real
+     visible edge — see the HTML comment above the markup for why.
+     Darkened for this page only (id selector beats the shared component's
+     rgba fill) to match the Figma reference measured here — note this is
+     the fill's own alpha, separate from the .visible class's show/hide
+     opacity (which must stay at the shared component's 0/1 toggle).
+     article.html keeps the shared component's own default untouched. */
+  #term-overlay-bg { background: rgba(0, 0, 0, 0.28); }
+
+  /* ---- summary state ---- */
+  .summary-card {
+    position: absolute; left: 20px; top: 223px; width: 362px; height: 713px;
+    background: #ffffff; border-radius: 10px; box-shadow: 0 0 7.5px rgba(0,0,0,0.15);
+    padding: 20px; display: flex; flex-direction: column; gap: 15px;
+    cursor: grab; touch-action: pan-y;
+  }
+  .summary-card.dragging { cursor: grabbing; transition: none !important; }
+  .summary-card.animating { transition: transform 0.3s ease, opacity 0.3s ease; }
+  .summary-intro { display: flex; gap: 8px; align-items: center; }
+  .summary-intro .icon-box {
+    width: 24px; height: 24px; border-radius: 10px; background: #F1F1F1;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .summary-intro .icon-box .gicon { font-size: 18px; width: 18px; height: 18px; color: #5F738C; }
+  .summary-intro p { font-size: 14px; color: #898989; font-weight: var(--font-weight-regular); line-height: 1.3; }
+  .summary-intro .em { color: var(--color-brand-600); font-weight: var(--font-weight-semibold); }
+
+  .summary-head { display: flex; flex-direction: column; gap: 10px; padding-bottom: 16px; }
+  .summary-head .headline { font-weight: var(--font-weight-bold); font-size: 24px; color: #000; line-height: 1.3; }
+  .summary-head .tags { display: flex; gap: 12px; font-size: 14px; color: #000; font-weight: var(--font-weight-regular); }
+
+  .tab-row {
+    display: flex; align-items: center; height: 37px; padding: 2px;
+    border: 1px solid var(--color-border-default); border-radius: 30px;
+  }
+  .tab-row button {
+    flex: 1 0 0; height: 100%; border: none; border-radius: 999px; background: none;
+    font-family: inherit; font-size: 14px; font-weight: var(--font-weight-regular); color: #3C4043; cursor: pointer;
+  }
+  .tab-row button.active { background: var(--color-brand-600); color: #fff; }
+
+  .summary-box {
+    background: #FAFBFE; border: 1px solid var(--color-border-default);
+    padding: 16px; display: flex; align-items: center; justify-content: center;
+  }
+  .summary-box p { font-weight: var(--font-weight-semibold); font-size: 20px; color: #000; line-height: 1.3; text-align: left; width: 100%; }
+
+  /* ---- completion state ---- */
+  .completion-content {
+    position: absolute; left: 50%; top: 226px; transform: translateX(-50%);
+    width: 197px; display: flex; flex-direction: column; align-items: center; gap: 20px;
+  }
+  .completion-content .wallet-img { width: 100%; height: auto; display: block; }
+  .completion-content .headline { font-weight: var(--font-weight-semibold); font-size: 22px; color: #000; text-align: center; }
+  .completion-content .badge {
+    background: #EFF6FF; border-radius: 999px; padding: 4px 10px;
+    font-weight: var(--font-weight-semibold); font-size: 12px; color: #666;
+  }
+  .completion-buttons {
+    position: absolute; left: 20px; top: 678px; width: 362px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .completion-buttons .primary-btn {
+    height: 60px; border-radius: 16px; background: var(--color-brand-600); border: none;
+    color: #fff; font-family: inherit; font-weight: var(--font-weight-semibold); font-size: 16px; cursor: pointer;
+  }
+  .completion-buttons .outline-btn {
+    height: 48px; border-radius: 16px; background: none; border: 1px solid var(--color-border-default);
+    color: var(--color-brand-600); font-family: inherit; font-weight: var(--font-weight-medium); font-size: 14px; cursor: pointer;
+  }
+
+  @media (max-width: 402px) {
+    .progress-block { width: calc(100% - 40px); }
+    .card-stack { width: 100%; }
+    .peek-back { left: 30px; width: calc(100% - 60px); }
+    .peek-front { left: 25px; width: calc(100% - 50px); }
+    .peek-back.advance { left: 25px; width: calc(100% - 50px); }
+    .peek-front.advance { left: 20px; width: calc(100% - 40px); }
+    .reading-card { left: 20px; width: calc(100% - 40px); }
+    .summary-card,
+    .completion-buttons { width: calc(100% - 40px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="portfolio-stage">
+<div class="iphone-device">
+<div class="device-bezel">
+<div class="app-screen">
+<div class="dynamic-island"></div>
+<div class="ios-status-bar">
+  <span class="status-time">9:41</span>
+  <div class="status-icons">
+    <img src="assets/img/icons/status-bar-levels.svg" alt="" width="100" height="22" />
+  </div>
+</div>
+
+<div class="device">
+
+  <!-- Screen 1: 읽기 (article stack, swipe to advance) -->
+  <div class="screen active" id="screen-reading">
+    <div data-eb="nav-header" data-title="데일리브리핑" data-back="article.html" data-right="share" data-short="true"></div>
+
+    <div class="progress-block">
+      <div class="counter-row">
+        <p><span class="count-current" id="count-current">1</span><span class="count-total"> / 5건</span></p>
+        <p class="eta">도착 9분 전</p>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <ul>
+        <li>AI로 쉽고 편향되지 않은 뉴스를 작성합니다.</li>
+        <li>교차검증으로 정보의 신뢰성을 확인합니다.</li>
+      </ul>
+    </div>
+
+    <div class="card-stack">
+      <div class="peek-back"></div>
+      <div class="peek-front"></div>
+      <div class="reading-card" id="reading-card">
+        <div class="article-head">
+          <div class="headline-wrap"><div class="headline" id="article-headline"></div></div>
+          <div class="subhead" id="article-subhead"></div>
+        </div>
+        <div class="article-body-wrap">
+          <div class="article-media-wrap">
+            <a class="article-image-link" id="article-image-link">
+              <img class="article-image" id="article-image" style="display:none;" src="" alt="" />
+            </a>
+            <p class="article-body" id="article-body"></p>
+          </div>
+          <div class="related-list" id="article-related" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overlay/sheet are siblings of .card-stack (not nested inside it): .card-stack
+         is authored against the native 402x874 frame, but the desktop mockup
+         constrains .device to 828px (the other 46px goes to the decorative status
+         bar), so anything positioned off .card-stack's own bottom edge renders
+         ~46px+ below .device's real bottom and gets clipped by .app-screen's
+         overflow. #screen-reading matches .device's actual box exactly
+         (position:absolute; inset:0), so anchoring here keeps the sheet's
+         bottom edge — and the save button — on-screen, and lets the dim
+         overlay cover the whole screen (header + progress + card) as intended. -->
+    <div class="term-sheet-overlay" id="term-overlay-bg"></div>
+    <div class="term-sheet" id="term-popup">
+      <div class="ts-handle"></div>
+      <div class="ts-body">
+        <div class="ts-title" id="term-popup-title"></div>
+        <div class="ts-desc" id="term-popup-desc"></div>
+      </div>
+      <button type="button" class="ts-save">용어저장</button>
+    </div>
+  </div>
+
+  <!-- Screen 2: 요약 (완료!) -->
+  <div class="screen" id="screen-summary">
+    <div data-eb="nav-header" data-title="데일리브리핑" data-back="article.html" data-right="share" data-short="true"></div>
+
+    <div class="progress-block">
+      <div class="counter-row end-only"><p class="done-label">완료!</p></div>
+      <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
+      <ul>
+        <li>AI로 쉽고 편향되지 않은 뉴스를 작성합니다.</li>
+        <li>교차검증으로 정보의 신뢰성을 확인합니다.</li>
+      </ul>
+    </div>
+
+    <div class="summary-card" id="summary-card">
+      <div class="summary-intro">
+        <div class="icon-box"><span class="gicon" role="img" aria-label="">chat_bubble</span></div>
+        <p>가장 중요한 <span class="em">경제 이슈를 쉽게</span> <span class="em">설명</span> 해드릴게요.</p>
+      </div>
+      <div class="summary-head">
+        <div class="headline">부동산·ETF 시장 안정화 대책 발표</div>
+        <div class="tags"><span>#PF</span><span>#ETF</span><span>#부동산</span><span>#시장안정</span></div>
+      </div>
+      <div class="tab-row">
+        <button type="button" class="active" data-tab="one-line">한 줄</button>
+        <button type="button" data-tab="other-view">다른 시각</button>
+        <button type="button" data-tab="30sec">30초 브리핑</button>
+      </div>
+      <div class="summary-box"><p>정부가 부동산 시장 안정화 대책을 발표했습니다.</p></div>
+    </div>
+  </div>
+
+  <!-- Screen 3: 완료 -->
+  <div class="screen" id="screen-complete">
+    <div data-eb="nav-header" data-right="share" data-short="true"></div>
+
+    <div class="completion-content">
+      <img class="wallet-img" src="assets/img/briefing-wallet-coins.png" alt="" />
+      <div>
+        <div class="headline">다 따라잡았어요!</div>
+      </div>
+      <div class="badge">오늘 브리핑 5건 · 12분</div>
+    </div>
+
+    <div class="completion-buttons">
+      <button type="button" class="primary-btn" id="get-token-btn">토큰 획득하기</button>
+      <button type="button" class="outline-btn" id="more-news-btn">부동산 뉴스 1건 더 보기</button>
+    </div>
+  </div>
+
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<script src="assets/js/device-mockup.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/common.js"></script>
+<script src="assets/js/term-sheet.js"></script>
+<script>
+  (function () {
+    var articles = [
+      {
+        id: 'bok-rate-325',
+        headline: '한국은행, 기준금리 3.25%로 동결',
+        subhead: '5회 연속 동결, 물가·가계부채 균형 고려',
+        image: 'assets/img/news/bok-rate-325.webp',
+        body: '한국은행이 기준금리를 3.25%로 5회 연속 동결했다. 물가 안정과 가계부채 관리 사이 균형을 고려한 결정으로 풀이된다.',
+        related: [
+          { title: '기준금리 동결 배경 살펴보기', href: 'article.html?id=bok-rate-hold-2' },
+          { title: '물가·가계부채 균형 전략', href: 'article.html?id=rate-inflation-debt-balance' },
+          { title: '가계대출 영향, 무엇이 달라지나', href: 'article.html?id=bok-rate-household-loan-impact' },
+          { title: '향후 통화정책 방향 전망', href: 'article.html?id=bok-rate-outlook-h2' }
+        ]
+      },
+      {
+        id: 'realestate-etf-plan',
+        headline: '정부, 부동산·ETF 시장 안정화<br />대책 발표',
+        subhead: '시장 변동성 확대 속 투자자 보호와 유동성 관리 방안 공개',
+        image: 'assets/img/briefing-article-pf.webp',
+        bodyHtml: '최근 부동산 <span class="term-link" data-term="pf">프로젝트파이낸싱(PF)</span> 리스크와 레버리지ETF 투자 증가에 대응하기 위해 정부가 시장 안정화 대책을 발표했습니다. 금융당국은 투자자 보호를 강화하고 시장 변동성 완화를 위한 관리 방안을 단계적으로 추진할 예정입니다.',
+        related: [
+          { title: '정부 대책 핵심 브리핑', href: 'article.html?id=realestate-etf-plan' },
+          { title: '부동산 PF 리스크, 무엇이 달라지나', href: 'article.html?id=realestate-pf-risk-change' },
+          { title: 'ETF 시장 안정화 방안 살펴보기', href: 'article.html?id=leveraged-etf-stabilization-measures' },
+          { title: '투자자 보호 조치와 향후 일정', href: 'article.html?id=investor-protection-schedule' }
+        ]
+      },
+      {
+        id: 'samsung-hbm4',
+        headline: '삼성전자, HBM4 양산 AI 메모리<br />경쟁',
+        subhead: '엔비디아향 공급 확대 기대감',
+        image: 'assets/img/news/samsung-hbm4.webp',
+        body: '삼성전자가 차세대 고대역폭메모리 HBM4 양산에 들어갔다. 엔비디아향 공급 확대 기대감에 반도체 업종 전반이 강세를 보였다.',
+        related: [
+          { title: '엔비디아향 공급 확대 기대감', href: 'article.html?id=samsung-hbm4' },
+          { title: 'HBM4 시장 경쟁 구도 살펴보기', href: 'article.html?id=hbm-demand-surge' },
+          { title: 'AI 반도체 수요가 미치는 영향', href: 'article.html?id=ai-chip-demand-impact' },
+          { title: '삼성전자 차세대 메모리 전략', href: 'article.html?id=samsung-next-gen-memory-strategy' }
+        ]
+      },
+      {
+        id: 'seoul-apt-price',
+        headline: '서울 아파트값 3주 연속 상승,<br />강남권 주도',
+        subhead: '재건축 단지 중심 상승 폭 확대',
+        image: 'assets/img/news/seoul-apt-price.webp',
+        body: '서울 아파트 매매가격이 3주 연속 오름세를 나타냈다. 강남·서초 등 재건축 단지 중심으로 상승 폭이 확대되는 모습이다.',
+        related: [
+          { title: '강남권 재건축 단지 상승세', href: 'article.html?id=seoul-apt-price' },
+          { title: '서울 아파트 거래량 변화', href: 'article.html?id=seoul-apt-transaction-volume' },
+          { title: '금리와 주택시장 전망', href: 'article.html?id=rate-housing-market-outlook' },
+          { title: '향후 부동산 시장 변수', href: 'article.html?id=realestate-market-variables-outlook' }
+        ]
+      },
+      {
+        id: 'fed-rate-cut-sep',
+        headline: '美연준, 9월 금리 인하 시사,<br />시장 환호',
+        subhead: '뉴욕증시 3대 지수 일제히 상승',
+        image: 'assets/img/news/fed-rate-cut-sep.webp',
+        body: '미 연방준비제도 의장이 9월 회의에서 금리 인하 가능성을 시사했다. 뉴욕증시 3대 지수가 일제히 상승 마감했다.',
+        related: [
+          { title: '연준 금리 결정 핵심 내용', href: 'article.html?id=fed-rate-cut-sep' },
+          { title: '미국 물가와 금리 전망', href: 'article.html?id=us-inflation-rate-outlook' },
+          { title: '뉴욕증시 주요 지수 움직임', href: 'article.html?id=nyse-index-movement' },
+          { title: '금리 인하가 국내 시장에 미치는 영향', href: 'article.html?id=fed-cut-domestic-market-impact' }
+        ]
+      }
+    ];
+
+    var currentIndex = 0; // 0-based
+    var readingCard = document.getElementById('reading-card');
+    var termOverlay = document.getElementById('term-overlay-bg');
+
+    function renderArticle(i) {
+      var a = articles[i];
+      document.getElementById('article-headline').innerHTML = a.headline;
+      document.getElementById('article-subhead').textContent = a.subhead;
+      var img = document.getElementById('article-image');
+      var imgLink = document.getElementById('article-image-link');
+      var body = document.getElementById('article-body');
+      var related = document.getElementById('article-related');
+
+      if (a.image) {
+        img.loading = 'lazy';
+        img.src = a.image;
+        img.style.display = 'block';
+      } else {
+        img.style.display = 'none';
+      }
+      // Tapping the hero image opens this same story's full article.html
+      // (and from there, its Deep Research) — a.id is the real id shared
+      // with assets/js/news-data-source.js, the same database article.html
+      // itself reads from.
+      if (a.id) {
+        imgLink.setAttribute('href', 'article.html?id=' + encodeURIComponent(a.id));
+      } else {
+        imgLink.removeAttribute('href');
+      }
+
+      if (a.bodyHtml) {
+        body.innerHTML = a.bodyHtml;
+      } else {
+        body.textContent = a.body;
+      }
+
+      if (a.related) {
+        related.style.display = 'flex';
+        // Real <a> per item so the row is a genuine clickable link wherever a
+        // matching article already exists (href set to article.html?id=...);
+        // items with no matching article yet render as an <a> with no href
+        // attribute at all, which browsers treat as plain non-interactive
+        // text (no navigation, not tab-focusable) rather than a dead link.
+        related.innerHTML = a.related.map(function (item) {
+          var hrefAttr = item.href ? ' href="' + item.href + '"' : '';
+          return '<a class="related-item"' + hrefAttr + '><span class="gicon" role="img" aria-label="">play_circle</span><span>' + item.title + '</span></a>';
+        }).join('');
+      } else {
+        related.style.display = 'none';
+      }
+      // term-link click handling now lives in assets/js/term-sheet.js (shared component)
+    }
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); });
+      document.getElementById(id).classList.add('active');
+    }
+
+    function updateProgress(i) {
+      document.getElementById('count-current').textContent = (i + 1);
+      document.getElementById('progress-fill').style.width = (((i + 1) / articles.length) * 100) + '%';
+    }
+
+    var peekBack = document.querySelector('.peek-back');
+    var peekFront = document.querySelector('.peek-front');
+
+    function snapInstantly(el, apply) {
+      el.classList.add('no-anim');
+      apply();
+      // eslint-disable-next-line no-unused-expressions
+      el.offsetHeight; // force reflow so the next transition re-enables cleanly
+      el.classList.remove('no-anim');
+    }
+
+    // Sequence once the front card has flown off-screen (already invisible at this point):
+    // 1) the article content is swapped while the card is still transparent
+    // 2) the stacked papers sliding forward AND the new card fading in happen together, at once
+    // 3) once everything has settled into place, the progress bar fills up
+    function advanceReading() {
+      if (currentIndex >= articles.length - 1) {
+        showScreen('screen-summary');
+        return;
+      }
+
+      currentIndex++;
+      renderArticle(currentIndex);
+
+      // card is still fully transparent here, so resetting its position is invisible
+      snapInstantly(readingCard, function () {
+        readingCard.style.transform = 'translateX(0) rotate(0deg)';
+        readingCard.style.opacity = '0';
+      });
+
+      requestAnimationFrame(function () {
+        peekFront.classList.add('advance');
+        peekBack.classList.add('advance');
+        readingCard.classList.add('animating');
+        readingCard.style.opacity = '1';
+
+        setTimeout(function () {
+          readingCard.classList.remove('animating');
+          // the opaque card now fully covers the stack, so the peeks can reset without being seen
+          snapInstantly(peekFront, function () { peekFront.classList.remove('advance'); });
+          snapInstantly(peekBack, function () { peekBack.classList.remove('advance'); });
+          updateProgress(currentIndex);
+        }, 300);
+      });
+    }
+
+    function resetCardPosition(card) {
+      card.classList.add('animating');
+      card.style.transform = 'translateX(0) rotate(0deg)';
+      card.style.opacity = '1';
+      setTimeout(function () { card.classList.remove('animating'); }, 300);
+    }
+
+    function setupSwipe(card, onSwipeAway) {
+      var isDragging = false;
+      var startX = 0, startY = 0;
+      var dragMoved = false;
+
+      card.addEventListener('pointerdown', function (e) {
+        if (termOverlay.classList.contains('visible')) return;
+        if (e.target.closest('.term-link') || e.target.closest('button') || e.target.closest('a')) return;
+        isDragging = true;
+        dragMoved = false;
+        startX = e.clientX;
+        startY = e.clientY;
+        card.classList.add('dragging');
+        card.setPointerCapture(e.pointerId);
+      });
+
+      card.addEventListener('pointermove', function (e) {
+        if (!isDragging) return;
+        var dx = e.clientX - startX;
+        var dy = e.clientY - startY;
+        if (Math.abs(dx) > 8) dragMoved = true;
+        card.style.transform = 'translateX(' + dx + 'px) rotate(' + (dx / 20) + 'deg)';
+        card.style.opacity = String(Math.max(0.4, 1 - Math.abs(dx) / 400));
+      });
+
+      function endDrag(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        card.classList.remove('dragging');
+        var dx = e.clientX - startX;
+        if (Math.abs(dx) > 90) {
+          var dir = dx > 0 ? 1 : -1;
+          card.classList.add('animating');
+          card.style.transform = 'translateX(' + (dir * 500) + 'px) rotate(' + (dir * 20) + 'deg)';
+          card.style.opacity = '0';
+          setTimeout(function () {
+            card.classList.remove('animating');
+            onSwipeAway();
+          }, 260);
+        } else {
+          resetCardPosition(card);
+        }
+      }
+
+      card.addEventListener('pointerup', endDrag);
+      card.addEventListener('pointercancel', endDrag);
+
+      card.addEventListener('click', function (e) {
+        if (dragMoved) { e.stopPropagation(); e.preventDefault(); dragMoved = false; }
+      }, true);
+    }
+
+    setupSwipe(readingCard, advanceReading);
+    setupSwipe(document.getElementById('summary-card'), function () { showScreen('screen-complete'); });
+
+    // AI가 임의로 생성한 프로토타입 콘텐츠 — 실제로는 기사별 요약 API 응답이 들어갈 자리.
+    var summaryBoxTexts = {
+      'one-line': '정부가 부동산 시장 안정화 대책을 발표했습니다.',
+      'other-view': 'PF 리스크 관리와 시장 유동성 확보가 주요 내용입니다.',
+      '30sec': '정부는 투자자 보호를 강화하고 부동산 시장 변동성을 낮추는 방안을 추진합니다.'
+    };
+    var summaryBox = document.querySelector('#summary-card .summary-box p');
+    document.querySelectorAll('.tab-row button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.tab-row button').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        var text = summaryBoxTexts[btn.dataset.tab];
+        if (text && summaryBox) summaryBox.textContent = text;
+      });
+    });
+
+    document.getElementById('get-token-btn').addEventListener('click', function () {
+      EB.appState.rewardBriefing();
+      window.location.href = 'token.html';
+    });
+    document.getElementById('more-news-btn').addEventListener('click', function () { window.location.href = 'main.html'; });
+
+    // 중간에 이탈(뒤로가기)했다가 다시 들어오면 처음부터가 아니라 보던 카드부터
+    // 이어서 보여준다 — EB.appState.saveBriefingProgress/briefingProgress는
+    // common.js에 이미 있었지만 실제로 호출/구독하는 곳이 없었음.
+    var savedProgress = EB.appState.load().briefingProgress;
+    var startIndex = (savedProgress && savedProgress.current >= 0 && savedProgress.current < articles.length)
+      ? savedProgress.current
+      : 0;
+    currentIndex = startIndex;
+    renderArticle(startIndex);
+    updateProgress(startIndex);
+
+    document.addEventListener('DOMContentLoaded', function () {
+      var backLink = document.querySelector('#screen-reading .nav-header-common a.icon-btn');
+      if (!backLink) return;
+      backLink.addEventListener('click', function () {
+        EB.appState.saveBriefingProgress({ current: currentIndex, total: articles.length });
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

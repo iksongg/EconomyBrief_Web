@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="favicon.ico" />
+<title>이코노미브리프 - 분석 기록</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<link rel="stylesheet" href="design-system/tokens/colors.css" />
+<link rel="stylesheet" href="design-system/tokens/typography.css" />
+<link rel="stylesheet" href="design-system/tokens/layout.css" />
+<link rel="stylesheet" href="assets/css/common.css" />
+<link rel="stylesheet" href="assets/css/device-mockup.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-family-base);
+    background: #EAEBEF;
+    min-height: 100dvh;
+    display: flex; align-items: flex-start; justify-content: center;
+  }
+  .scroll-area { padding-bottom: 20px; }
+  .section-white { background: #ffffff; padding: 20px; }
+
+  .report-list { display: flex; flex-direction: column; }
+  .report-item {
+    display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: none;
+    text-align: left; font-family: inherit; color: inherit; cursor: pointer;
+    padding: 14px 0; border-bottom: 1px solid var(--color-border-default);
+  }
+  .report-item:first-child { padding-top: 0; }
+  .report-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .report-item .icon-badge { width: 36px; height: 36px; border-radius: 10px; background: #EAF2FF; color: var(--color-status2-blue-fill); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .report-item .icon-badge .gicon { font-size: 20px; width: 20px; height: 20px; }
+  .report-item .report-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .report-item .report-title { font-weight: var(--font-weight-semibold); font-size: 14px; color: #000; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .report-item .report-meta { font-size: 12px; color: #5B5E73; display: flex; align-items: center; gap: 4px; }
+  .report-item .status-badge { background: var(--color-status2-green-bg); color: var(--color-status2-green-fill); border-radius: 999px; padding: 2px 8px; font-size: 10px; font-weight: var(--font-weight-semibold); }
+  .report-item .chev-icon { color: #1C1B1F; flex-shrink: 0; }
+
+  .empty-state { padding: 60px 20px; text-align: center; color: #5B5E73; font-size: 14px; line-height: 1.6; }
+  .empty-state .gicon { font-size: 40px; width: 40px; height: 40px; color: #C2C6D1; display: block; margin: 0 auto 12px; }
+</style>
+</head>
+<body>
+
+<div class="portfolio-stage">
+<div class="iphone-device">
+<div class="device-bezel">
+<div class="app-screen">
+<div class="dynamic-island"></div>
+<div class="ios-status-bar">
+  <span class="status-time">9:41</span>
+  <div class="status-icons">
+    <img src="assets/img/icons/status-bar-levels.svg" alt="" width="100" height="22" />
+  </div>
+</div>
+
+<div class="device">
+  <div class="scroll-area">
+
+    <div data-eb="nav-header" data-title="분석 기록" data-back="mypage.html" data-right="none" data-short="true"></div>
+
+    <div class="section-white">
+      <div class="report-list" id="report-list"></div>
+      <div class="empty-state" id="empty-state" style="display:none;">
+        <span class="gicon" role="img" aria-label="">news</span>
+        아직 분석 기록이 없어요<br />기사에서 딥 리서치를 실행해보세요.
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<script src="assets/js/device-mockup.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/common.js"></script>
+<script src="assets/js/news-data-source.js"></script>
+<script src="assets/js/api-news-client.js"></script>
+<script src="assets/js/news-data.js"></script>
+<script>
+  window.EBNews.loadArticles().then(function (allArticles) {
+    var byId = {};
+    allArticles.forEach(function (a) { byId[a.id] = a; });
+    var history = EB.analysisHistory.getAll()
+      .map(function (entry) { return { entry: entry, article: byId[entry.id] }; })
+      .filter(function (row) { return row.article; });
+
+    var list = document.getElementById('report-list');
+    document.getElementById('empty-state').style.display = history.length ? 'none' : 'block';
+
+    history.forEach(function (row) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'report-item';
+      btn.innerHTML =
+        '<div class="icon-badge"><span class="gicon" role="img" aria-label="">news</span></div>' +
+        '<div class="report-info"><div class="report-title"></div><div class="report-meta"><span></span><span class="status-badge">완료</span></div></div>' +
+        '<span class="gicon chev-icon" role="img" aria-label="">arrow_forward_ios</span>';
+      btn.querySelector('.report-title').textContent = row.article.title;
+      var d = new Date(row.entry.date);
+      var dateLabel = isNaN(d) ? '' : (d.getMonth() + 1) + '월 ' + d.getDate() + '일 분석';
+      btn.querySelector('.report-meta span').textContent = dateLabel;
+      btn.addEventListener('click', function () {
+        window.location.href = 'deep-research.html?id=' + encodeURIComponent(row.article.id);
+      });
+      list.appendChild(btn);
+    });
+  });
+</script>
+
+</body>
+</html>

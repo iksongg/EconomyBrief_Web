@@ -1,0 +1,273 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="favicon.ico" />
+<title>이코노미브리프 - 마이페이지</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<link rel="stylesheet" href="design-system/tokens/colors.css" />
+<link rel="stylesheet" href="design-system/tokens/typography.css" />
+<link rel="stylesheet" href="design-system/tokens/layout.css" />
+<link rel="stylesheet" href="assets/css/common.css" />
+<link rel="stylesheet" href="assets/css/device-mockup.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-family-base);
+    background: #EAEBEF;
+    min-height: 100dvh;
+    display: flex; align-items: flex-start; justify-content: center;
+  }
+  .device { background: var(--color-status2-gray-bg); }
+  .scroll-area { padding-bottom: 90px; }
+
+  .section-white { background: #ffffff; padding: 20px; }
+  .section-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .section-title-row h2 { font-weight: var(--font-weight-semibold); font-size: 14px; color: #000; }
+  .link-more { display: flex; align-items: center; gap: 0; font-size: 14px; color: #5D5D5D; cursor: pointer; background: none; border: none; font-family: inherit; }
+  .chev-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; color: #1C1B1F; }
+
+  /* profile card */
+  .profile-card { background: #F8F8FC; border-radius: 20px; padding: 16px; display: flex; align-items: center; gap: 12px; }
+  .avatar-wrap { position: relative; width: 63px; height: 63px; flex-shrink: 0; }
+  .avatar-wrap img.avatar-bg, .avatar-wrap img.avatar-photo { position: absolute; inset: 0; width: 63px; height: 63px; border-radius: 50%; object-fit: cover; }
+  .avatar-wrap .camera-badge { position: absolute; left: 41px; top: 41px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
+  .avatar-wrap .camera-badge img { position: absolute; inset: 0; width: 20px; height: 20px; }
+  .avatar-wrap .camera-badge .gicon { position: relative; font-size: 13px; width: 13px; height: 13px; color: #000; }
+  .profile-info { display: flex; flex-direction: column; gap: 5px; }
+  .profile-info .name { font-weight: var(--font-weight-semibold); font-size: 16px; color: #000; }
+  .profile-info .desc { font-weight: var(--font-weight-regular); font-size: 14px; color: #000; margin-top: 2px; }
+  .profile-info .badge-row { display: flex; align-items: center; gap: 4px; margin-top: 3px; }
+  .profile-info .level-badge { background: #EFF6FF; border-radius: 999px; padding: 4px 10px; font-size: 10px; color: #000; }
+  .profile-info .stars { display: flex; align-items: center; }
+  .profile-info .stars .gicon { font-size: 16px; width: 16px; height: 16px; color: var(--color-brand-600); }
+
+  /* stat grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .stat-card { border: 1px solid var(--color-border-default); border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 20px 0; text-decoration: none; color: inherit; }
+  a.stat-card { cursor: pointer; }
+  .stat-card .icon-badge { width: 30px; height: 30px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .stat-card .icon-badge .gicon { font-size: 22.5px; width: 22.5px; height: 22.5px; }
+  .stat-card .stat-value { font-weight: var(--font-weight-semibold); font-size: 24px; color: var(--color-brand-600); }
+  .stat-card .stat-label { font-weight: var(--font-weight-semibold); font-size: 14px; color: #000; margin-top: 2px; }
+
+  .icon-badge.purple { background: #DDE1FF; }
+  .icon-badge.green { background: #ECF8F1; }
+  .icon-badge.gray { background: #F1F1F1; }
+  .icon-badge.blue { background: #DCE9FE; }
+  .icon-badge.yellow { background: #FFF3E8; }
+  .icon-badge.purple .gicon { color: var(--color-status2-purple-fill); }
+  .icon-badge.green .gicon { color: var(--color-status2-green-fill); }
+  .icon-badge.gray .gicon { color: var(--color-status2-gray-fill); }
+  .icon-badge.blue .gicon { color: var(--color-status2-blue-fill); }
+  .icon-badge.yellow .gicon { color: var(--color-status2-yellow-fill); }
+
+  /* token row */
+  .token-row { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--color-border-default); padding-bottom: 20px; }
+  .token-row-left { display: flex; align-items: center; gap: 12px; }
+  .token-row-left .coin-frame { position: relative; width: 56px; height: 58px; overflow: hidden; flex-shrink: 0; }
+  .token-row-left .coin-frame img.coin { position: absolute; left: -29.66%; top: -38.69%; width: 277.02%; height: 178.55%; max-width: none; }
+  .token-row-left .token-label { font-weight: var(--font-weight-medium); font-size: 14px; color: #000; }
+  .token-row-left .token-amount { font-weight: var(--font-weight-semibold); font-size: 24px; color: #000; margin-top: 2px; }
+  .charge-btn { background: var(--color-brand-600); border: none; border-radius: 8px; padding: 12px; color: #fff; font-family: inherit; font-weight: var(--font-weight-semibold); font-size: 14px; cursor: pointer; }
+
+  .history-list { display: flex; flex-direction: column; padding-top: 12px; }
+  .history-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+  .history-left { display: flex; align-items: center; gap: 4px; }
+  .history-left .icon-badge { width: 24px; height: 24px; border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+  .history-left .icon-badge img { width: 14px; height: 14px; }
+  .history-left .icon-badge .gicon { font-size: 18px; width: 18px; height: 18px; }
+  .history-left span { font-weight: var(--font-weight-regular); font-size: 14px; color: #000; }
+  .history-amount { font-weight: var(--font-weight-regular); font-size: 14px; color: #000; }
+  .history-amount.plus { color: var(--color-brand-600); font-weight: var(--font-weight-medium); }
+
+  /* keywords */
+  .keyword-pills { display: flex; gap: 8px; overflow-x: auto; }
+  .keyword-pills::-webkit-scrollbar { display: none; }
+  .keyword-pills span { flex-shrink: 0; background: #EDF2FD; border-radius: 50px; height: 36px; padding: 0 17px; display: flex; align-items: center; font-weight: var(--font-weight-semibold); font-size: 14px; color: var(--color-brand-600); }
+
+  /* row list (내 콘텐츠 / 설정 / 고객센터) */
+  .row-list { display: flex; flex-direction: column; }
+  .row-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--color-border-default); background: none; border-left: none; border-right: none; border-top: none; width: 100%; font-family: inherit; cursor: pointer; text-align: left; text-decoration: none; color: inherit; }
+  .row-item:first-child { padding-top: 0; }
+  .row-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .row-item .row-left { display: flex; align-items: center; gap: 4px; }
+  .row-item .icon-badge { width: 24px; height: 24px; border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+  .row-item .icon-badge .gicon { font-size: 18px; width: 18px; height: 18px; }
+  .row-item span.label { font-weight: var(--font-weight-regular); font-size: 14px; color: #000; }
+</style>
+</head>
+<body>
+
+<div class="portfolio-stage">
+<div class="iphone-device">
+<div class="device-bezel">
+<div class="app-screen">
+<div class="dynamic-island"></div>
+<div class="ios-status-bar">
+  <span class="status-time">9:41</span>
+  <div class="status-icons">
+    <img src="assets/img/icons/status-bar-levels.svg" alt="" width="100" height="22" />
+  </div>
+</div>
+
+<div class="device">
+  <div class="scroll-area">
+
+    <div data-eb="nav-header" data-title="마이페이지" data-back="main.html" data-right="share" data-short="true"></div>
+
+    <div class="section-white">
+      <div class="profile-card">
+        <div class="avatar-wrap">
+          <img class="avatar-bg" src="assets/img/icons/avatar-bg.svg" alt="" />
+          <img class="avatar-photo" src="assets/img/mypage-avatar-photo.png" alt="" />
+          <div class="camera-badge">
+            <img src="assets/img/icons/camera-badge-bg.svg" alt="" />
+            <span class="gicon" role="img" aria-label="">photo_camera</span>
+          </div>
+        </div>
+        <div class="profile-info">
+          <div class="name">이현우님</div>
+          <div class="desc">경제를 더 쉽게 이해하는 중입니다.</div>
+          <div class="badge-row">
+            <span class="level-badge">경제 이해도 Lv3</span>
+            <div class="stars">
+              <span class="gicon" style="font-variation-settings:'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;" role="img" aria-label="">star</span>
+              <span class="gicon" style="font-variation-settings:'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;" role="img" aria-label="">star</span>
+              <span class="gicon" style="font-variation-settings:'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;" role="img" aria-label="">star</span>
+              <span class="gicon" style="font-variation-settings:'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;" role="img" aria-label="">star</span>
+              <span class="gicon" role="img" aria-label="">star</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-white">
+      <div class="section-title-row"><h2>AI 분석 활동</h2></div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="icon-badge purple"><span class="gicon" role="img" aria-label="">mindfulness</span></div>
+          <div class="stat-value">37회</div>
+          <div class="stat-label">Deep Research</div>
+        </div>
+        <div class="stat-card">
+          <div class="icon-badge green"><span class="gicon" role="img" aria-label="">book_5</span></div>
+          <div class="stat-value">126개</div>
+          <div class="stat-label">읽은 기사</div>
+        </div>
+        <a class="stat-card" href="glossary.html">
+          <div class="icon-badge gray"><span class="gicon" style="font-variation-settings:'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;" role="img" aria-label="">bookmark</span></div>
+          <div class="stat-value" id="mypage-saved-terms-count">0개</div>
+          <div class="stat-label">저장한 용어</div>
+        </a>
+        <div class="stat-card">
+          <div class="icon-badge blue"><span class="gicon" role="img" aria-label="">schedule</span></div>
+          <div class="stat-value">5분</div>
+          <div class="stat-label">평균 독서시간</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-white">
+      <div class="token-row">
+        <div class="token-row-left">
+          <div class="coin-frame"><img class="coin" src="assets/img/mypage-token-coin.png" alt="" /></div>
+          <div>
+            <div class="token-label">보유 토큰</div>
+            <div class="token-amount" id="mypage-token-amount">14개</div>
+          </div>
+        </div>
+        <button type="button" class="charge-btn" id="charge-btn">충전하기</button>
+      </div>
+
+      <div class="section-title-row" style="margin-top:12px; margin-bottom:0;">
+        <h2>최근 사용 내역</h2>
+        <button type="button" class="link-more" id="all-history-btn"><span>전체 내역</span><span class="gicon chev-icon" role="img" aria-label="">arrow_forward_ios</span></button>
+      </div>
+      <div class="history-list">
+        <div class="history-row">
+          <div class="history-left"><div class="icon-badge purple"><span class="gicon" role="img" aria-label="">smart_toy</span></div><span>Deep Research</span></div>
+          <div class="history-amount">-3</div>
+        </div>
+        <div class="history-row">
+          <div class="history-left"><div class="icon-badge blue"><span class="gicon" role="img" aria-label="">news</span></div><span>AI 요약</span></div>
+          <div class="history-amount">-1</div>
+        </div>
+        <div class="history-row">
+          <div class="history-left"><div class="icon-badge yellow"><img src="assets/img/icons/token-charge-badge.svg" alt="" /></div><span>토큰 충전</span></div>
+          <div class="history-amount plus">+30</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-white">
+      <div class="section-title-row">
+        <h2>관심 키워드</h2>
+        <button type="button" class="link-more" id="add-keyword-btn"><span>키워드 추가</span><span class="gicon chev-icon" role="img" aria-label="">arrow_forward_ios</span></button>
+      </div>
+      <div class="keyword-pills">
+        <span>AI</span><span>반도체</span><span>ETF</span><span>환율</span><span>금리</span>
+      </div>
+    </div>
+
+    <div class="section-white">
+      <div class="section-title-row"><h2>내 콘텐츠</h2></div>
+      <div class="row-list">
+        <a class="row-item" href="saved-articles.html"><div class="row-left"><div class="icon-badge gray"><span class="gicon" style="font-variation-settings:'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;" role="img" aria-label="">bookmark</span></div><span class="label">저장한 기사</span></div><span class="gicon chev-icon" role="img" aria-label="">arrow_forward_ios</span></a>
+        <a class="row-item" href="ai-reports.html"><div class="row-left"><div class="icon-badge gray"><span class="gicon" role="img" aria-label="">smart_toy</span></div><span class="label">AI 리포트</span></div><span class="gicon chev-icon" role="img" aria-label="">arrow_forward_ios</span></a>
+        <a class="row-item" href="analysis-history.html"><div class="row-left"><div class="icon-badge gray"><span class="gicon" role="img" aria-label="">news</span></div><span class="label">분석 기록</span></div><span class="gicon chev-icon" role="img" aria-label="">arrow_forward_ios</span></a>
+        <a class="row-item" href="shared-reports.html"><div class="row-left"><div class="icon-badge gray"><span class="gicon" role="img" aria-label="">upload</span></div><span class="label">공유한 리포트</span></div><span class="gicon chev-icon" role="img" aria-label="">arrow_forward_ios</span></a>
+      </div>
+    </div>
+
+    <div class="section-white">
+      <div class="section-title-row"><h2>설정</h2></div>
+      <div class="row-list">
+        <a class="row-item" href="notification-settings.html"><div class="row-left"><div class="icon-badge gray"><span class="gicon" role="img" aria-label="">notifications</span></div><span class="label">알림설정</span></div><span class="gicon chev-icon" role="img" aria-label="">arrow_forward_ios</span></a>
+        <a class="row-item" href="theme-settings.html"><div class="row-left"><div class="icon-badge gray"><span class="gicon" role="img" aria-label="">dark_mode</span></div><span class="label">다크모드</span></div><span class="gicon chev-icon" role="img" aria-label="">arrow_forward_ios</span></a>
+        <a class="row-item" href="font-settings.html"><div class="row-left"><div class="icon-badge gray"><span class="gicon" role="img" aria-label="">match_case</span></div><span class="label">글자 크기</span></div><span class="gicon chev-icon" role="img" aria-label="">arrow_forward_ios</span></a>
+        <a class="row-item" href="language-settings.html"><div class="row-left"><div class="icon-badge gray"><span class="gicon" role="img" aria-label="">public</span></div><span class="label">언어 설정</span></div><span class="gicon chev-icon" role="img" aria-label="">arrow_forward_ios</span></a>
+      </div>
+    </div>
+
+    <div class="section-white">
+      <div class="section-title-row"><h2>고객센터</h2></div>
+      <div class="row-list">
+        <a class="row-item" href="faq.html"><div class="row-left"><div class="icon-badge gray"><span class="gicon" role="img" aria-label="">question_mark</span></div><span class="label">자주 묻는 질문</span></div><span class="gicon chev-icon" role="img" aria-label="">arrow_forward_ios</span></a>
+        <a class="row-item" href="contact.html"><div class="row-left"><div class="icon-badge gray"><span class="gicon" role="img" aria-label="">comment</span></div><span class="label">문의하기</span></div><span class="gicon chev-icon" role="img" aria-label="">arrow_forward_ios</span></a>
+        <a class="row-item" href="terms.html"><div class="row-left"><div class="icon-badge gray"><span class="gicon" role="img" aria-label="">assignment</span></div><span class="label">서비스 이용약관</span></div><span class="gicon chev-icon" role="img" aria-label="">arrow_forward_ios</span></a>
+        <a class="row-item" href="privacy.html"><div class="row-left"><div class="icon-badge gray"><span class="gicon" role="img" aria-label="">shield_lock</span></div><span class="label">개인정보 처리방침</span></div><span class="gicon chev-icon" role="img" aria-label="">arrow_forward_ios</span></a>
+      </div>
+    </div>
+
+  </div>
+
+  <div data-eb="tab-bar" data-active="mypage"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<script src="assets/js/device-mockup.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+  document.getElementById('mypage-token-amount').textContent = EB.appState.load().tokens + '개';
+  document.getElementById('mypage-saved-terms-count').textContent = EB.glossary.count() + '개';
+  document.getElementById('charge-btn').addEventListener('click', function () {
+    window.location.href = 'token.html';
+  });
+  document.getElementById('all-history-btn').addEventListener('click', function () {
+    window.location.href = 'token.html';
+  });
+  document.getElementById('add-keyword-btn').addEventListener('click', function () {
+    EB.showToast('서비스 준비중입니다.');
+  });
+</script>
+
+</body>
+</html>

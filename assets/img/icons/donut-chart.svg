@@ -1,0 +1,27 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="124.002" height="124" viewBox="0 0 124.002 124" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 1000006526">
+<circle id="Ellipse 330" cx="62" cy="62" r="53" stroke="#E6E7EB" stroke-width="18"/>
+<g id="Group 1000006525">
+<g id="Ellipse 334">
+<mask id="path-2-inside-1_0_310" fill="white">
+<path d="M120.261 83.2052C116.295 94.1015 109.353 103.667 100.223 110.816L62 62L120.261 83.2052Z"/>
+</mask>
+<path d="M120.261 83.2052C116.295 94.1015 109.353 103.667 100.223 110.816L62 62L120.261 83.2052Z" stroke="#567DFB" stroke-width="36" mask="url(#path-2-inside-1_0_310)"/>
+</g>
+<g id="Ellipse 337">
+<mask id="path-3-inside-2_0_310" fill="white">
+<path d="M100.258 110.788C90.8199 118.19 79.4376 122.694 67.4908 123.756C55.5439 124.819 43.5454 122.393 32.9495 116.773L62 62L100.258 110.788Z"/>
+</mask>
+<path d="M100.258 110.788C90.8199 118.19 79.4376 122.694 67.4908 123.756C55.5439 124.819 43.5454 122.393 32.9495 116.773L62 62L100.258 110.788Z" stroke="#FDA961" stroke-width="36" mask="url(#path-3-inside-2_0_310)"/>
+</g>
+<g id="Ellipse 338">
+<mask id="path-4-inside-3_0_310" fill="white">
+<path d="M33.1557 116.882C22.4343 111.247 13.5982 102.595 7.73855 91.9949L62 62L33.1557 116.882Z"/>
+</mask>
+<path d="M33.1557 116.882C22.4343 111.247 13.5982 102.595 7.73855 91.9949L62 62L33.1557 116.882Z" stroke="#4DCFB6" stroke-width="36" mask="url(#path-4-inside-3_0_310)"/>
+</g>
+<path id="Ellipse 335" d="M70.1465 9.62988C75.6107 10.4797 80.9273 12.1825 85.8965 14.6924C93.567 18.5667 100.181 24.2483 105.167 31.2471C110.153 38.2458 113.363 46.352 114.52 54.8672C115.269 60.3832 115.139 65.9635 114.158 71.4053L70.8984 55.6602L70.1465 9.62988Z" stroke="#9189F4" stroke-width="18"/>
+</g>
+<circle id="Ellipse 340" cx="62" cy="62" r="44" fill="white"/>
+</g>
+</svg>

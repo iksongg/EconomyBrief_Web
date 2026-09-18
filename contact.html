@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="favicon.ico" />
+<title>이코노미브리프 - 문의하기</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<link rel="stylesheet" href="design-system/tokens/colors.css" />
+<link rel="stylesheet" href="design-system/tokens/typography.css" />
+<link rel="stylesheet" href="design-system/tokens/layout.css" />
+<link rel="stylesheet" href="assets/css/common.css" />
+<link rel="stylesheet" href="assets/css/device-mockup.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-family-base);
+    background: #EAEBEF;
+    min-height: 100dvh;
+    display: flex; align-items: flex-start; justify-content: center;
+  }
+  .scroll-area { padding-bottom: 20px; }
+  .section-white { background: #ffffff; padding: 20px; }
+
+  .form-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .form-field label { font-weight: var(--font-weight-semibold); font-size: 14px; color: #000; }
+  .form-field select, .form-field textarea {
+    font-family: inherit; font-size: 14px; color: #000; border: 1px solid var(--color-border-default);
+    border-radius: 12px; padding: 12px 14px; background: #fff; width: 100%;
+  }
+  .form-field select { height: 48px; }
+  .form-field textarea { min-height: 140px; resize: vertical; line-height: 1.6; }
+  .form-field select:focus, .form-field textarea:focus { outline: none; border-color: var(--color-brand-600); }
+
+  .submit-btn {
+    width: 100%; height: 48px; border-radius: 999px; border: none;
+    background: var(--color-brand-600); color: #fff; font-family: inherit;
+    font-weight: var(--font-weight-semibold); font-size: 14px; cursor: pointer;
+  }
+  .submit-btn:disabled { background: #E6E7EB; color: #9CA0AC; cursor: not-allowed; }
+
+  .done-view { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 80px 20px; gap: 16px; }
+  .done-view .gicon { font-size: 48px; width: 48px; height: 48px; color: var(--color-status2-green-fill); }
+  .done-view h2 { font-weight: var(--font-weight-bold); font-size: 18px; color: #000; }
+  .done-view p { font-weight: var(--font-weight-regular); font-size: 14px; color: #5B5E73; line-height: 1.6; }
+  .done-view .confirm-btn {
+    margin-top: 8px; padding: 12px 24px; border-radius: 999px; border: none;
+    background: var(--color-brand-600); color: #fff; font-family: inherit;
+    font-weight: var(--font-weight-semibold); font-size: 14px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="portfolio-stage">
+<div class="iphone-device">
+<div class="device-bezel">
+<div class="app-screen">
+<div class="dynamic-island"></div>
+<div class="ios-status-bar">
+  <span class="status-time">9:41</span>
+  <div class="status-icons">
+    <img src="assets/img/icons/status-bar-levels.svg" alt="" width="100" height="22" />
+  </div>
+</div>
+
+<div class="device">
+  <div class="scroll-area">
+
+    <div data-eb="nav-header" data-title="문의하기" data-back="mypage.html" data-right="none" data-short="true"></div>
+
+    <div class="section-white" id="form-view">
+      <form id="contact-form">
+        <div class="form-field">
+          <label for="contact-type">문의 유형</label>
+          <select id="contact-type">
+            <option value="account">계정/로그인</option>
+            <option value="content">기사/콘텐츠 오류</option>
+            <option value="token">토큰/결제</option>
+            <option value="bug">버그 신고</option>
+            <option value="etc">기타</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="contact-message">문의 내용</label>
+          <textarea id="contact-message" placeholder="문의하실 내용을 입력해주세요."></textarea>
+        </div>
+        <button type="submit" class="submit-btn" id="submit-btn" disabled>보내기</button>
+      </form>
+    </div>
+
+    <div class="done-view" id="done-view">
+      <span class="gicon" role="img" aria-label="">check_circle</span>
+      <h2>문의가 접수되었습니다</h2>
+      <p>빠른 시일 내에 확인 후 답변드릴게요.<br />(프로토타입 화면으로 실제 전송되지는 않습니다.)</p>
+      <button type="button" class="confirm-btn" onclick="location.href='mypage.html'">마이페이지로 돌아가기</button>
+    </div>
+
+  </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<script src="assets/js/device-mockup.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+  var textarea = document.getElementById('contact-message');
+  var submitBtn = document.getElementById('submit-btn');
+  textarea.addEventListener('input', function () {
+    submitBtn.disabled = textarea.value.trim().length === 0;
+  });
+  document.getElementById('contact-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (submitBtn.disabled) return;
+    document.getElementById('form-view').style.display = 'none';
+    document.getElementById('done-view').style.display = 'flex';
+  });
+</script>
+
+</body>
+</html>

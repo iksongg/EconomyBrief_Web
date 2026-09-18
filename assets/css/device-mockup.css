@@ -1,0 +1,78 @@
+/*
+  EconomyBrief_Web — browser app shell (was: desktop portfolio device
+  mockup). This file used to draw a decorative iPhone frame + iOS status
+  bar + Dynamic Island around every page's `.device` for desktop portfolio
+  viewing (EconomyBrief_API_Final still does, unmodified). This fork's
+  goal is the opposite: the browser viewport itself IS the app, at every
+  width, with no iPhone chrome at all.
+
+  Kept identical to the original: the `.portfolio-stage > .iphone-device >
+  .device-bezel > .app-screen > .device` wrapper markup is still present in
+  every page (removing it from 21 HTML files individually was unnecessary
+  and riskier than neutralizing it here) - `display: contents` collapses
+  all four wrapper divs out of the box tree at every width now (previously
+  only below 700px), so `.device` becomes body's effective flex child
+  exactly as on mobile, regardless of viewport size. `.ios-status-bar` /
+  `.dynamic-island` (the fake "9:41" clock + notch) are hidden at every
+  width for the same reason - a real browser tab already has its own real
+  chrome.
+
+  New in this fork: `.device`'s max-width (402px on mobile, from
+  common.css) now steps up at wider viewports so the existing mobile UI
+  gets a bit more breathing room on tablet/desktop instead of staying
+  pinned at a literal 402px column - never a full desktop redesign, just
+  a wider version of the same mobile layout (see the README-style comment
+  at the bottom of this file for why these particular widths were chosen).
+*/
+
+.portfolio-stage,
+.iphone-device,
+.device-bezel,
+.app-screen {
+  display: contents;
+}
+
+.ios-status-bar,
+.dynamic-island {
+  display: none;
+}
+
+/* Single-screen app shell with its own internal scroll (`.scroll-area`,
+   common.css) at every width, not just mobile - prevents a redundant
+   outer page scrollbar from ever appearing alongside the inner one. */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Cursor feedback for the mouse-drag-to-scroll gesture added in
+   device-mockup.js (any row the app already made overflow-x: auto). Only
+   changes the cursor — never the row's own layout/size/content. */
+.eb-drag-scrollable {
+  cursor: grab;
+}
+.eb-drag-scrollable.eb-drag-scrolling {
+  cursor: grabbing;
+  scroll-snap-type: none !important;
+  user-select: none;
+}
+
+/* Tablet: a modest step up from the 402px mobile column - wide enough for
+   the existing 2-column stat/criteria grids to breathe, nowhere near full
+   tablet width (this is still the mobile layout, just wider, not a
+   tablet-specific redesign). */
+@media (min-width: 700px) {
+  .device {
+    max-width: 640px !important;
+  }
+}
+
+/* Desktop: a comfortable reading-column width for a text/card-heavy news
+   app - wide enough to not look like a stranded mobile screen, narrow
+   enough that body text doesn't stretch into unreadably long lines and
+   hero images don't blow up to full-monitor size. */
+@media (min-width: 1024px) {
+  .device {
+    max-width: 760px !important;
+  }
+}

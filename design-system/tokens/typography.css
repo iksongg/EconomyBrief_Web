@@ -1,0 +1,132 @@
+/*
+  Typography tokens — EconomyBrief Design System
+  Source: Figma "디자인시스템" > 03. Typography
+  Single typeface: Pretendard. 4 weights, 13 fixed text styles (10-30px).
+  Do not introduce sizes outside this scale.
+*/
+
+:root {
+  --font-family-base: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+}
+
+/* Display/L — splash, first onboarding line */
+.text-display-l {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-bold);
+  font-size: 30px;
+  line-height: 39px;
+  letter-spacing: -0.02em;
+}
+
+/* Heading/1 — top-of-screen title */
+.text-heading-1 {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-bold);
+  font-size: 24px;
+  line-height: 32px;
+  letter-spacing: -0.02em;
+}
+
+/* Heading/2 — section title, article title */
+.text-heading-2 {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-bold);
+  font-size: 20px;
+  line-height: 28px;
+  letter-spacing: -0.02em;
+}
+
+/* Heading/3 — card title, modal title */
+.text-heading-3 {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-semibold);
+  font-size: 18px;
+  line-height: 26px;
+  letter-spacing: -0.015em;
+}
+
+/* Title/1 — list item title */
+.text-title-1 {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-semibold);
+  font-size: 17px;
+  line-height: 25px;
+  letter-spacing: -0.015em;
+}
+
+/* Title/2 — button label, tab, emphasis phrase */
+.text-title-2 {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-semibold);
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: -0.01em;
+}
+
+/* Body/1 — article body, long-form reading */
+.text-body-1 {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-regular);
+  font-size: 16px;
+  line-height: 26px;
+  letter-spacing: -0.01em;
+}
+
+/* Body/2 — default body copy, descriptions */
+.text-body-2 {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-regular);
+  font-size: 14px;
+  line-height: 22px;
+  letter-spacing: -0.01em;
+}
+
+/* Body/2 Emphasis — inline emphasis, figures */
+.text-body-2-emphasis {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-semibold);
+  font-size: 14px;
+  line-height: 22px;
+  letter-spacing: -0.01em;
+}
+
+/* Label/1 — input label, filter chip */
+.text-label-1 {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.01em;
+}
+
+/* Caption/1 — meta info, timestamp, source */
+.text-caption-1 {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-regular);
+  font-size: 12px;
+  line-height: 18px;
+  letter-spacing: -0.005em;
+}
+
+/* Caption/2 — badge text, tag */
+.text-caption-2 {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-semibold);
+  font-size: 12px;
+  line-height: 17px;
+  letter-spacing: -0.005em;
+}
+
+/* Overline — tab bar label, smallest text unit */
+.text-overline {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-regular);
+  font-size: 10px;
+  line-height: 14px;
+  letter-spacing: 0;
+}

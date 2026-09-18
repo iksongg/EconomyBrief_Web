@@ -1,0 +1,46 @@
+/*
+  Layout tokens — EconomyBrief Design System
+  Source: Figma "디자인시스템" > 04. Grid & Layout
+  Base screen: 402pt wide, 4 columns. Spacing is always a multiple of 4pt.
+*/
+
+:root {
+  /* Screen grid */
+  --screen-width: 402px;
+  --grid-columns: 4;
+  --grid-margin: 20px;      /* content width = 362px */
+  --grid-gutter: 12px;      /* column width = 81.5px */
+  --safe-area-top: 59px;    /* status bar + notch */
+  --tab-bar-height: 56px;
+  --home-indicator-height: 34px;
+  --scroll-content-start: 16px;
+
+  /* Spacing scale (4pt base) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+  --space-3xl: 32px;
+  --space-4xl: 40px;
+  --space-5xl: 48px;
+  --space-6xl: 64px;
+
+  /* Corner radius */
+  --radius-badge: 4px;        /* badges, tags */
+  --radius-input: 8px;        /* inputs, small buttons */
+  --radius-card: 12px;        /* cards, buttons */
+  --radius-modal: 16px;       /* modals, bottom sheets */
+  --radius-full: 9999px;      /* avatars, filter chips */
+
+  /* Elevation — shadows are capped at 3 levels.
+     NOTE: the Figma board only exposes level names/usage as text
+     ("Level 0/1/2"); exact blur/opacity are Figma effect styles that
+     could not be read from metadata text. Values below are a reasonable
+     approximation — confirm against the actual Figma effect style before
+     shipping. */
+  --elevation-0: none;                              /* separated by Border/Default only */
+  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.06);      /* cards, list items */
+  --elevation-2: 0 8px 24px rgba(0, 0, 0, 0.12);     /* bottom sheets, modals, dropdowns */
+}

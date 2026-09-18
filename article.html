@@ -1,0 +1,258 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="favicon.ico" />
+<title>이코노미브리프 - 기사 본문</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<link rel="stylesheet" href="design-system/tokens/colors.css" />
+<link rel="stylesheet" href="design-system/tokens/typography.css" />
+<link rel="stylesheet" href="design-system/tokens/layout.css" />
+<link rel="stylesheet" href="assets/css/common.css" />
+<link rel="stylesheet" href="assets/css/device-mockup.css" />
+<link rel="stylesheet" href="assets/css/term-sheet.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-family-base);
+    background: #EAEBEF;
+    min-height: 100dvh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .content-padded { padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
+
+  /* article header */
+  .article-header { display: flex; flex-direction: column; margin-top: 14px; gap: 4px; padding: 0 20px; }
+  .article-header .title { font-weight: var(--font-weight-bold); font-size: 20px; color: #000000; line-height: 1.3; }
+  .article-header .meta { display: flex; align-items: center; gap: 4px; font-size: 14px; color: #868686; }
+  .article-header .meta .source { display: flex; align-items: center; gap: 2px; }
+  .article-header .meta .source img { width: 16px; height: 16px; border-radius: 4px; object-fit: cover; }
+  .source-logo-placeholder { width: 16px; height: 16px; border-radius: 4px; background: #E2E4E9; flex-shrink: 0; display: inline-block; }
+
+  .hero-image { width: 100%; height: 200px; object-fit: cover; display: block; margin-top: 20px; }
+  .hero-placeholder {
+    width: 100%; height: 200px; margin-top: 20px; border-radius: 0; background: #F1F2F5;
+    display: none; align-items: center; justify-content: center; flex-direction: column; gap: 4px;
+  }
+  .hero-placeholder .gicon { font-size: 32px; width: 32px; height: 32px; color: #C2C6D1; }
+  .hero-placeholder span { font-size: 12px; color: #A3A7B3; }
+
+  .article-not-found { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 80px 20px; text-align: center; }
+  .article-not-found p { font-weight: var(--font-weight-semibold); font-size: 16px; color: #5B5B5B; }
+  .article-not-found button {
+    height: 44px; padding: 0 20px; border-radius: 8px; background: var(--color-brand-600); border: none;
+    color: #fff; font-family: inherit; font-weight: var(--font-weight-semibold); font-size: 14px; cursor: pointer;
+  }
+  body.article-missing #article-content { display: none; }
+  body.article-missing .article-not-found { display: flex; }
+
+  /* .scroll-area(공용, common.css)에는 하단 여백이 전혀 없어 마지막 콘텐츠가
+     화면 가장자리에 딱 붙는다 — 실제 모바일에서는 눈에 안 띄지만, 데스크톱
+     iPhone 목업(둥근 베젤 프레임) 안에서는 콘텐츠가 곡선에 바짝 붙어 보임.
+     같은 유형(탭바 없는 상세 페이지)인 glossary.html이 이미 쓰고 있는
+     padding-bottom: 20px를 그대로 재사용, 목업이 활성화되는 구간에만 적용해
+     모바일 레이아웃은 전혀 건드리지 않는다. */
+  @media (min-width: 700px) {
+    .scroll-area { padding-bottom: 20px; }
+  }
+
+  /* AI summary card - height must always grow with content; no
+     line-clamp/ellipsis/fixed-height/overflow-hidden clipping is ever
+     applied here (explicit, not just "absent by default") so a future
+     edit elsewhere can't silently reintroduce truncation. */
+  .ai-summary-card { background: #F6F7FB; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; height: auto; max-height: none; overflow: visible; }
+  .ai-summary-card .summary-head { display: flex; align-items: center; gap: 4px; }
+  .ai-summary-card .icon-box {
+    width: 24px; height: 24px; border-radius: 7px; background: #DDE1FF;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    font-weight: var(--font-weight-semibold); font-size: 14px; color: #5B6CFF;
+  }
+  .ai-summary-card .summary-title { font-weight: var(--font-weight-semibold); font-size: 16px; color: #000000; text-transform: uppercase; }
+  .ai-summary-card ul { list-style: disc; padding-left: 21px; display: flex; flex-direction: column; gap: 4px; height: auto; max-height: none; overflow: visible; }
+  .ai-summary-card li { font-weight: var(--font-weight-regular); font-size: 14px; color: #000000; line-height: 1.6; white-space: normal; overflow-wrap: break-word; word-break: break-word; overflow: visible; max-height: none; }
+  .ai-summary-card .term, .qna-a .term {
+    display: inline; font-weight: var(--font-weight-semibold); color: var(--color-brand-600); text-decoration: underline;
+    cursor: pointer; background: none; border: none; font-family: inherit; font-size: inherit; padding: 0; margin: 0;
+  }
+
+  /* Q&A block: plain (non-card) layout - no background/border-radius/box
+     padding, so it never reads as a second copy of .ai-summary-card above
+     it. Same flex/typography approach as .article-header elsewhere on this
+     page, which also has no card chrome. */
+  .qna-block { display: flex; flex-direction: column; gap: 12px; }
+  .qna-item { display: flex; flex-direction: column; gap: 4px; }
+  .qna-item .qna-q { display: flex; align-items: center; gap: 4px; font-weight: var(--font-weight-semibold); font-size: 14px; color: #000000; }
+  .qna-item .qna-q .gicon { font-size: 16px; width: 16px; height: 16px; color: var(--color-brand-600); }
+  .qna-item .qna-q span { line-height: 1; }
+  .qna-item .qna-a { font-weight: var(--font-weight-regular); font-size: 14px; color: #5B5B5B; line-height: 1.6; }
+
+  /* term bottom sheet: see assets/css/term-sheet.css (shared component) */
+
+  /* deep-research CTA */
+  .cta-wrap { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .cta-banner {
+    background: #0F39A3; height: 31px; width: 100%; border-radius: 27px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: var(--font-weight-medium); font-size: 14px; color: #ffffff; text-align: center;
+  }
+  .cta-banner .dim { color: rgba(255,255,255,0.67); }
+  .cta-pointer { width: 13px; height: 11px; display: block; transform: rotate(180deg); margin-top: -1px; }
+  .deep-research-btn {
+    width: 100%; height: 60px; border-radius: 16px; background: #EFF6FF; border: none;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    font-family: inherit; font-weight: var(--font-weight-semibold); font-size: 16px; color: var(--color-brand-600);
+    cursor: pointer; margin-top: 6px;
+  }
+  .deep-research-btn .gicon { font-size: 22px; width: 22px; height: 22px; }
+
+  .divider-line { height: 1px; background: var(--color-border-default); width: 100%; }
+
+  .hashtags { display: flex; gap: 4px; }
+  .hashtags span {
+    border: 1px solid #E6E9F0; border-radius: 999px; padding: 4px 10px;
+    font-weight: var(--font-weight-regular); font-size: 12px; color: #000000;
+  }
+
+  .section-spacer { width: 100%; height: 20px; background: var(--color-status2-gray-bg); margin-top: 20px; }
+
+  .news-section { display: flex; flex-direction: column; gap: 8px; }
+  .news-section h2 { font-weight: var(--font-weight-semibold); font-size: 16px; line-height: 20px; color: #1F1F1F; }
+  .news-section h2 .highlight { color: var(--color-brand-600); }
+  .news-list { display: flex; flex-direction: column; }
+  .news-list .news-item {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    width: 100%; background: none; border: none; text-align: left;
+    font-family: inherit; color: inherit; cursor: pointer;
+    padding: 16px 0; border-bottom: 1px solid var(--color-border-default);
+  }
+  .news-list .news-item:last-child { border-bottom: none; }
+  .news-list .news-info { display: flex; flex-direction: column; justify-content: center; gap: 4px; width: 266px; min-height: 56px; }
+  .news-list .news-title { font-weight: var(--font-weight-bold); font-size: 16px; color: #000000; line-height: 1.3; }
+  .news-list .news-byline { display: flex; align-items: center; gap: 4px; font-weight: var(--font-weight-regular); font-size: 12px; color: #5B5B5B; }
+  .news-list .news-thumb { width: 56px; height: 56px; border-radius: 5.526px; object-fit: cover; flex-shrink: 0; }
+
+  .section-divider-img { width: 100%; }
+  .section-divider-img img { display: block; width: 100%; }
+</style>
+</head>
+<body>
+
+<div class="portfolio-stage">
+<div class="iphone-device">
+<div class="device-bezel">
+<div class="app-screen">
+<div class="dynamic-island"></div>
+<div class="ios-status-bar">
+  <span class="status-time">9:41</span>
+  <div class="status-icons">
+    <img src="assets/img/icons/status-bar-levels.svg" alt="" width="100" height="22" />
+  </div>
+</div>
+
+<div class="device">
+  <div class="scroll-area">
+
+    <div data-eb="nav-header" data-back="main.html" data-right="share" data-short="true"></div>
+
+    <div class="article-not-found">
+      <p>기사를 찾을 수 없습니다.</p>
+      <button type="button" onclick="location.href='main.html'">홈으로 가기</button>
+    </div>
+
+    <div id="article-content">
+
+    <div class="article-header">
+      <div class="title" id="article-title">AI 데이터 투자 확대, 국내 반도체 수혜 기대</div>
+      <div class="meta">
+        <span id="article-date">2026.04.11</span>
+        <span>·</span>
+        <span class="source" id="article-source"><img src="assets/img/article-kbs-logo.png" alt="" />KBS뉴스</span>
+      </div>
+    </div>
+
+    <img class="hero-image" id="article-hero-image" src="assets/img/article-hero.webp" alt="" />
+    <div class="hero-placeholder" id="article-hero-placeholder">
+      <span class="gicon" role="img" aria-label="">image</span>
+      <span id="article-hero-placeholder-filename"></span>
+    </div>
+
+    <div class="content-padded" style="margin-top:20px;">
+      <div class="ai-summary-card">
+        <div class="summary-head">
+          <div class="icon-box">AI</div>
+          <div class="summary-title" id="summary-title">ai 핵심 요약</div>
+        </div>
+        <ul id="ai-summary-list">
+          <li>빅테크 기업들이 AI 데이터센터 투자를 하고 있습니다.</li>
+          <li>AI 서버에 필요한 <button type="button" class="term" data-term="hbm">HBM</button> 수요가 증가하고 있습니다.</li>
+          <li>반도체 기업들의 실적 개선 기대감도 높아지고 있습니다.</li>
+          <li>AI 인프라 투자가 향후 수년간 지속될 가능성이 높다고 전망했습니다.</li>
+        </ul>
+      </div>
+
+      <div class="qna-block" id="qna-block"></div>
+
+      <div class="cta-wrap">
+        <div class="cta-banner"><span>토큰 3개를 이용</span><span class="dim">해서 더 유용한 기사를 보세요.</span></div>
+        <img class="cta-pointer" src="assets/img/icons/cta-pointer-triangle.svg" alt="" />
+        <button type="button" class="deep-research-btn" id="deep-research-btn">
+          <span class="gicon" role="img" aria-label="">search</span>딥 리서치
+        </button>
+      </div>
+
+      <div class="divider-line"></div>
+
+      <div class="hashtags" id="article-hashtags"><span>#AI</span><span>#반도체</span><span>#HBM</span></div>
+    </div>
+
+    <div class="section-spacer"></div>
+
+    <div class="content-padded" style="margin-top:20px; margin-bottom:24px; gap:24px;">
+      <div class="news-section">
+        <h2>📍<span class="highlight">관련된 뉴스 TOP3</span> 모아봤어요.</h2>
+        <div class="news-list" id="related-news-list"></div>
+      </div>
+
+      <div class="section-divider-img"><img src="assets/img/icons/hairline-divider.svg" alt="" /></div>
+
+      <div class="news-section">
+        <h2>🪄현우님 <span class="highlight">관심 키워드</span>로 추천된 뉴스예요.</h2>
+        <div class="news-list" id="recommend-news-list"></div>
+      </div>
+    </div>
+
+    </div>
+
+  </div>
+
+  <div class="term-sheet-overlay" id="term-overlay-bg"></div>
+  <div class="term-sheet" id="term-popup">
+    <div class="ts-handle"></div>
+    <div class="ts-body">
+      <div class="ts-title" id="term-popup-title"></div>
+      <div class="ts-desc" id="term-popup-desc"></div>
+    </div>
+    <button type="button" class="ts-save">용어저장</button>
+  </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<script src="assets/js/device-mockup.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/common.js"></script>
+<script src="assets/js/news-data-source.js"></script>
+<script src="assets/js/api-news-client.js"></script>
+<script src="assets/js/news-data.js"></script>
+<script src="assets/js/article-ai.js"></script>
+
+</body>
+</html>

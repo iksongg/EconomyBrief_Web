@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="favicon.ico" />
+<title>이코노미브리프 - 자주 묻는 질문</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<link rel="stylesheet" href="design-system/tokens/colors.css" />
+<link rel="stylesheet" href="design-system/tokens/typography.css" />
+<link rel="stylesheet" href="design-system/tokens/layout.css" />
+<link rel="stylesheet" href="assets/css/common.css" />
+<link rel="stylesheet" href="assets/css/device-mockup.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-family-base);
+    background: #EAEBEF;
+    min-height: 100dvh;
+    display: flex; align-items: flex-start; justify-content: center;
+  }
+  .scroll-area { padding-bottom: 20px; }
+  .section-white { background: #ffffff; padding: 20px; }
+
+  .faq-list { display: flex; flex-direction: column; }
+  .faq-item { border-bottom: 1px solid var(--color-border-default); }
+  .faq-item:last-child { border-bottom: none; }
+  .faq-q {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 16px 0; background: none; border: none; font-family: inherit; text-align: left; cursor: pointer;
+  }
+  .faq-q span.q-text { font-weight: var(--font-weight-semibold); font-size: 14px; color: #000; line-height: 1.4; }
+  .faq-q .gicon { font-size: 22px; width: 22px; height: 22px; color: #5B5E73; flex-shrink: 0; transition: transform 0.15s ease; }
+  .faq-item.open .faq-q .gicon { transform: rotate(180deg); }
+  .faq-a { max-height: 0; overflow: hidden; transition: max-height 0.2s ease; }
+  .faq-a p { padding: 0 0 16px; font-weight: var(--font-weight-regular); font-size: 14px; color: #424350; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="portfolio-stage">
+<div class="iphone-device">
+<div class="device-bezel">
+<div class="app-screen">
+<div class="dynamic-island"></div>
+<div class="ios-status-bar">
+  <span class="status-time">9:41</span>
+  <div class="status-icons">
+    <img src="assets/img/icons/status-bar-levels.svg" alt="" width="100" height="22" />
+  </div>
+</div>
+
+<div class="device">
+  <div class="scroll-area">
+
+    <div data-eb="nav-header" data-title="자주 묻는 질문" data-back="mypage.html" data-right="none" data-short="true"></div>
+
+    <div class="section-white">
+      <div class="faq-list" id="faq-list"></div>
+    </div>
+
+  </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<script src="assets/js/device-mockup.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+  var FAQS = [
+    { q: 'EconomyBrief는 어떤 서비스인가요?', a: 'EconomyBrief는 복잡한 경제 뉴스를 AI가 핵심만 요약해 보여주는 모바일 경제 뉴스 앱입니다.' },
+    { q: 'AI 기사 요약은 어떻게 만들어지나요?', a: '기사의 제목, 설명, 카테고리 등 원문 정보를 바탕으로 핵심 요약과 Q&A 형태로 자동 정리됩니다.' },
+    { q: 'Deep Research는 무엇인가요?', a: '관심 있는 기사를 더 깊이 분석해주는 기능으로, 토큰을 사용해 시장 영향과 전망까지 확인할 수 있습니다.' },
+    { q: '저장한 기사는 어디에서 확인하나요?', a: '마이페이지 > 내 콘텐츠 > 저장한 기사에서 지금까지 저장한 기사 목록을 확인할 수 있습니다.' },
+    { q: 'Daily Briefing은 어떻게 이용하나요?', a: '홈 화면의 브리핑 카드를 눌러 오늘의 주요 뉴스를 순서대로 넘겨보며 확인할 수 있습니다.' },
+    { q: '기사 내용은 실제 뉴스인가요?', a: '이 프로젝트는 포트폴리오용 프로토타입으로, 일부 기사는 실제 보도를 참고해 재구성한 예시 콘텐츠입니다.' },
+    { q: '토큰은 어떻게 충전하나요?', a: '마이페이지 또는 토큰 화면의 충전하기 버튼을 통해 토큰을 충전할 수 있습니다.' }
+  ];
+
+  var list = document.getElementById('faq-list');
+  FAQS.forEach(function (item, i) {
+    var wrap = document.createElement('div');
+    wrap.className = 'faq-item';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'faq-q';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.innerHTML = '<span class="q-text"></span><span class="gicon" role="img" aria-label="">keyboard_arrow_down</span>';
+    btn.querySelector('.q-text').textContent = item.q;
+    var answer = document.createElement('div');
+    answer.className = 'faq-a';
+    var p = document.createElement('p');
+    p.textContent = item.a;
+    answer.appendChild(p);
+
+    btn.addEventListener('click', function () {
+      var isOpen = wrap.classList.toggle('open');
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      answer.style.maxHeight = isOpen ? answer.scrollHeight + 'px' : '';
+    });
+
+    wrap.append(btn, answer);
+    list.appendChild(wrap);
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="favicon.ico" />
+<title>이코노미브리프 - 글자 크기</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<link rel="stylesheet" href="design-system/tokens/colors.css" />
+<link rel="stylesheet" href="design-system/tokens/typography.css" />
+<link rel="stylesheet" href="design-system/tokens/layout.css" />
+<link rel="stylesheet" href="assets/css/common.css" />
+<link rel="stylesheet" href="assets/css/device-mockup.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-family-base);
+    background: #EAEBEF;
+    min-height: 100dvh;
+    display: flex; align-items: flex-start; justify-content: center;
+  }
+  .scroll-area { padding-bottom: 20px; }
+  .section-white { background: #ffffff; padding: 20px; }
+
+  .preview-card { background: #F8F8FC; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+  .preview-card .preview-title { font-weight: var(--font-weight-bold); color: #000; transition: font-size 0.15s ease; margin-bottom: 6px; }
+  .preview-card .preview-body { font-weight: var(--font-weight-regular); color: #424350; line-height: 1.6; transition: font-size 0.15s ease; }
+
+  .size-options { display: flex; gap: 8px; }
+  .size-option {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 16px 0; border-radius: 14px; border: 1px solid var(--color-border-default);
+    background: none; font-family: inherit; cursor: pointer;
+  }
+  .size-option.active { border-color: var(--color-brand-600); background: #F3F6FF; color: var(--color-brand-600); }
+  .size-option .a-sample { font-weight: var(--font-weight-bold); color: inherit; }
+  .size-option .label { font-size: 13px; font-weight: var(--font-weight-medium); color: inherit; }
+
+  .scope-note { margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: #F8F8FC; font-size: 12px; color: #5B5E73; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="portfolio-stage">
+<div class="iphone-device">
+<div class="device-bezel">
+<div class="app-screen">
+<div class="dynamic-island"></div>
+<div class="ios-status-bar">
+  <span class="status-time">9:41</span>
+  <div class="status-icons">
+    <img src="assets/img/icons/status-bar-levels.svg" alt="" width="100" height="22" />
+  </div>
+</div>
+
+<div class="device">
+  <div class="scroll-area">
+
+    <div data-eb="nav-header" data-title="글자 크기" data-back="mypage.html" data-right="none" data-short="true"></div>
+
+    <div class="section-white">
+      <div class="preview-card">
+        <div class="preview-title" id="preview-title">한국은행 기준금리 동결</div>
+        <div class="preview-body" id="preview-body">경제 뉴스를 더 편하게 읽을 수 있도록 글자 크기를 조절해보세요.</div>
+      </div>
+
+      <div class="size-options">
+        <button type="button" class="size-option" data-scale="sm"><span class="a-sample" style="font-size:16px;">가</span><span class="label">작게</span></button>
+        <button type="button" class="size-option" data-scale="md"><span class="a-sample" style="font-size:20px;">가</span><span class="label">기본</span></button>
+        <button type="button" class="size-option" data-scale="lg"><span class="a-sample" style="font-size:24px;">가</span><span class="label">크게</span></button>
+      </div>
+      <div class="scope-note">현재 프로토타입에서는 헤더 제목과 하단 탭바 글자 크기에 적용됩니다. 위 미리보기 카드는 선택한 크기를 예시로 보여줍니다.</div>
+    </div>
+
+  </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<script src="assets/js/device-mockup.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+  var SCALE_PX = { sm: { title: 16, body: 13 }, md: { title: 18, body: 14 }, lg: { title: 21, body: 16 } };
+  var settings = EB.settings.load();
+
+  function render() {
+    document.querySelectorAll('.size-option').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-scale') === settings.fontScale);
+    });
+    var px = SCALE_PX[settings.fontScale];
+    document.getElementById('preview-title').style.fontSize = px.title + 'px';
+    document.getElementById('preview-body').style.fontSize = px.body + 'px';
+  }
+  document.querySelectorAll('.size-option').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      settings = EB.settings.update(function (state) { state.fontScale = btn.getAttribute('data-scale'); });
+      render();
+    });
+  });
+  render();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,689 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="favicon.ico" />
+<title>이코노미브리프 - 홈</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<link rel="stylesheet" href="design-system/tokens/colors.css" />
+<link rel="stylesheet" href="design-system/tokens/typography.css" />
+<link rel="stylesheet" href="design-system/tokens/layout.css" />
+<link rel="stylesheet" href="assets/css/common.css" />
+<link rel="stylesheet" href="assets/css/device-mockup.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-family-base);
+    background: #EAEBEF;
+    min-height: 100dvh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .device { background: var(--color-status2-gray-bg); }
+  .scroll-area { padding-bottom: 90px; /* space for fixed tab bar */ }
+
+  /* ---- top section: status bar + header + stories ---- */
+  .top-section {
+    background: #ffffff;
+    padding-bottom: var(--space-xl);
+  }
+
+  .stories-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    padding-left: 16px;
+    margin-top: var(--space-lg);
+    overflow-x: auto;
+  }
+  .stories-row::-webkit-scrollbar { display: none; }
+  .story {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .story img { width: 70px; height: 70px; border-radius: 50%; display: block; object-fit: cover; }
+  .story span {
+    font-weight: var(--font-weight-semibold);
+    font-size: 14px;
+    line-height: 1.3;
+    color: var(--color-brand-600);
+    text-align: center;
+  }
+  .story span.locked { color: #E6E9F0; }
+  .story-lock-overlay {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.86);
+    mix-blend-mode: saturation;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  /* ---- shared white section ---- */
+  .card-section {
+    background: #ffffff;
+    padding: 26px 20px;
+    margin-top: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+  }
+  .card-section.ai-section {
+    padding: 10px 20px 20px;
+    gap: var(--space-lg);
+    margin-top: 0;
+  }
+
+  .section-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .section-eyebrow span {
+    font-weight: var(--font-weight-bold);
+    font-size: 14px;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+  .section-eyebrow.orange span, .section-eyebrow.orange .gicon { color: #FF7644; }
+  .section-eyebrow.blue span, .section-eyebrow.blue .gicon { color: var(--color-brand-600); }
+  .section-title {
+    font-weight: var(--font-weight-bold);
+    font-size: 20px;
+    line-height: 26px;
+  }
+  .section-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+  .section-heading .section-title { align-self: stretch; }
+
+  /* ---- AI curated card ---- */
+  .ai-title {
+    font-weight: var(--font-weight-bold);
+    font-size: 20px;
+    line-height: 1.3;
+    color: #000;
+    text-transform: uppercase;
+  }
+  .ai-card {
+    background: var(--color-brand-600);
+    height: 120px;
+    width: 100%;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+  }
+  .ai-card .left { display: flex; flex-direction: column; gap: 20px; width: 240px; }
+  .ai-card .dots { display: flex; gap: 4px; }
+  .ai-card .dots span { width: 24px; height: 2px; background: rgba(255,255,255,0.5); }
+  .ai-card .dots span:first-child { background: #ffffff; }
+  .ai-card .headline { font-weight: var(--font-weight-semibold); font-size: 18px; line-height: 1.3; color: #ffffff; }
+  .ai-card .subline { font-weight: var(--font-weight-regular); font-size: 14px; line-height: 1.3; color: rgba(255,255,255,0.76); margin-top: 4px; }
+  .ai-card .play-btn {
+    position: relative; width: 50px; height: 50px; flex-shrink: 0;
+    background: none; border: none; padding: 0; cursor: pointer; font-family: inherit;
+  }
+  .ai-card .play-btn img.bg { width: 50px; height: 50px; display: block; }
+  .ai-card .play-btn .gicon.arrow { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: #ffffff; }
+
+  /* ---- top-summary news card ---- */
+  .news-highlight-row {
+    display: flex;
+    gap: var(--space-md);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    width: 100%;
+  }
+  .news-highlight-row::-webkit-scrollbar { display: none; }
+  .news-highlight {
+    background: #FAFBFE;
+    border-radius: 20px;
+    padding: 16px 20px;
+    width: 100%;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    cursor: pointer;
+  }
+  .news-list .item, .trend-card { cursor: pointer; }
+  /* 헤드라인 1줄 말줄임 - .trend-card .headline과 동일한 기존 프로젝트 표준
+     패턴(nowrap+ellipsis) 재사용. 본문은 2줄 말줄임(line-clamp) - 실제 API
+     기사 제목/설명이 mock 텍스트보다 길어도 카드 높이가 늘어나 캐러셀/점/
+     아래 섹션 간격까지 밀리지 않도록 함. */
+  .news-highlight .headline {
+    font-weight: var(--font-weight-bold);
+    font-size: 18px;
+    line-height: 1.3;
+    color: #000000;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .news-highlight .body {
+    font-weight: var(--font-weight-regular);
+    font-size: 14px;
+    line-height: 1.6;
+    color: #101112;
+    margin-top: 6px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+  .news-highlight .tags { display: flex; gap: 6px; margin-top: 6px; }
+  .news-highlight .tags span {
+    background: #E8F1FF;
+    border-radius: 999px;
+    padding: 6px 9px;
+    font-size: 12px;
+    font-weight: var(--font-weight-regular);
+    color: #000000;
+  }
+  .highlight-dots { display: flex; justify-content: center; align-items: center; gap: 6px; }
+  .highlight-dots img { width: 5px; height: 5px; }
+
+  /* ---- personalized news list ---- */
+  .news-list { width: 100%; }
+  .news-list .item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--color-border-default);
+    gap: 12px;
+    max-height: 200px;
+    opacity: 1;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.3s ease, padding 0.35s ease, border-color 0.35s ease;
+  }
+  .news-list .item:first-child { padding-top: 0; }
+  .news-list .item:last-child { border-bottom: none; padding-bottom: 0; }
+  .news-list .item.more-item {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-color: transparent;
+  }
+  .news-list:not(.expanded) .item:nth-child(4) { border-bottom: none; padding-bottom: 0; }
+  .news-list .info { display: flex; flex-direction: column; justify-content: space-between; width: 266px; height: 84px; }
+  .news-list .title {
+    font-weight: var(--font-weight-bold);
+    font-size: 16px;
+    line-height: 1.3;
+    color: #000000;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .news-list .desc {
+    font-weight: var(--font-weight-regular);
+    font-size: 14px;
+    line-height: 1.3;
+    color: #101112;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .news-list .byline { display: flex; align-items: center; gap: 4px; margin-top: 8px; }
+  .news-list .byline img.source-logo { width: 16px; height: 16px; object-fit: contain; }
+  .news-list .byline span { font-weight: var(--font-weight-regular); font-size: 12px; line-height: 1.3; color: #5B5B5B; }
+  .news-list .thumb { width: 84px; height: 84px; border-radius: 5.526px; object-fit: cover; flex-shrink: 0; }
+
+  .more-news-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    width: 100%;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-full);
+    background: none;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .more-news-btn span { font-weight: var(--font-weight-semibold); font-size: 14px; color: #000000; }
+
+  /* ---- trend pick ---- */
+  .trend-section .section-title { color: #112840; }
+  .trend-row {
+    display: flex;
+    gap: var(--space-md);
+    overflow-x: auto;
+    width: 100%;
+  }
+  .trend-row::-webkit-scrollbar { display: none; }
+  .trend-card { width: 309px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; }
+  .trend-card .image-wrap {
+    position: relative;
+    height: 179px;
+    width: 100%;
+    border-radius: var(--radius-modal);
+    padding: 10px;
+    display: flex;
+    align-items: flex-start;
+    overflow: hidden;
+  }
+  .trend-card .image-wrap img.bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--radius-modal);
+  }
+  .trend-card .image-wrap.eb-placeholder .eb-thumb-placeholder {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius-modal);
+  }
+  .trend-card .tags { position: relative; display: flex; gap: 2px; }
+  .trend-card .tags span {
+    background: rgba(44, 62, 80, 0.5);
+    border-radius: 50px;
+    padding: 6px 9px;
+    font-size: 10px;
+    font-weight: var(--font-weight-regular);
+    color: #ffffff;
+  }
+  .trend-card .headline { font-weight: var(--font-weight-semibold); font-size: 18px; color: #000000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .trend-card .byline { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+  .trend-card .byline img { width: 16px; height: 16px; object-fit: contain; }
+  .trend-card .byline span { font-weight: var(--font-weight-regular); font-size: 12px; color: #000000; }
+
+</style>
+</head>
+<body>
+
+<div class="portfolio-stage">
+<div class="iphone-device">
+<div class="device-bezel">
+<div class="app-screen">
+<div class="dynamic-island"></div>
+<div class="ios-status-bar">
+  <span class="status-time">9:41</span>
+  <div class="status-icons">
+    <img src="assets/img/icons/status-bar-levels.svg" alt="" width="100" height="22" />
+  </div>
+</div>
+
+<div class="device">
+  <div class="scroll-area">
+
+    <div class="top-section">
+      <div data-eb="header-row-main"></div>
+
+      <div class="stories-row">
+        <div class="story"><img src="assets/img/story-semiconductor.png" alt="반도체" /><span>반도체</span></div>
+        <div class="story"><img src="assets/img/story-interest-rate.png" alt="금리" /><span>금리</span></div>
+        <div class="story"><img src="assets/img/story-exchange-rate.png" alt="환율" /><span>환율</span></div>
+        <div class="story"><img src="assets/img/story-ai.png" alt="AI" /><span class="locked">AI</span></div>
+        <div class="story"><img src="assets/img/story-realestate.png" alt="부동산" /><span class="locked">부동산</span></div>
+        <div class="story-lock-overlay" style="left:266px; top:15px; width:53px; height:40px;"></div>
+        <div class="story-lock-overlay" style="left:355px; top:9px; width:53px; height:52px;"></div>
+      </div>
+    </div>
+
+    <div class="card-section ai-section">
+      <div class="ai-title">ai가 선별한<br />현우님 맞춤 새 소식</div>
+      <div class="ai-card">
+        <div class="left">
+          <div class="dots"><span></span><span></span><span></span><span></span><span></span></div>
+          <div>
+            <div class="headline">AI 2건 · 반도체 2건 · 금리 1건</div>
+            <div class="subline">총 5건 예상 13분</div>
+          </div>
+        </div>
+        <button type="button" class="play-btn" id="play-briefing-btn">
+          <img class="bg" loading="lazy" src="assets/img/icons/play-button-bg.svg" alt="" />
+          <span class="gicon arrow" style="font-size:20px;width:20px;height:20px;font-variation-settings:'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;" role="img" aria-label="재생">play_arrow</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="section-heading">
+        <div class="section-eyebrow orange">
+          <span class="gicon flame" style="font-size:18px;width:18px;height:18px;" role="img" aria-label="">mode_heat</span>
+          <span>인기 급상승</span>
+        </div>
+        <div class="section-title">오늘의 핵심 요약 뉴스</div>
+      </div>
+      <div class="news-highlight-row" id="news-highlight-row">
+        <div class="news-highlight" data-article-id="ai-data-investment">
+          <div>
+            <div class="headline">AI 데이터 투자 확대, 국내 반도체 수혜 기대</div>
+            <div class="body">글로벌 빅테크 기업들이 생성형 AI 서비스 확대를 위해 데이터센터 투자를 지속하면서 AI 반도체 수요도 빠르게 증가하고 있습니다.</div>
+            <div class="tags"><span>#AI</span><span>#반도체</span><span>#HBM</span></div>
+          </div>
+        </div>
+        <div class="news-highlight" data-article-id="kospi-2700">
+          <div>
+            <div class="headline">코스피 2,700선 돌파, 외국인 매수세 확대</div>
+            <div class="body">외국인 투자자의 순매수세가 이어지며 코스피가 연중 최고치를 경신했습니다. 반도체와 이차전지 업종이 상승세를 주도했습니다.</div>
+            <div class="tags"><span>#코스피</span><span>#외국인매수</span><span>#반도체</span></div>
+          </div>
+        </div>
+        <div class="news-highlight" data-article-id="bok-rate-350">
+          <div>
+            <div class="headline">한국은행 기준금리 동결, 인하 시점에 쏠린 관심</div>
+            <div class="body">한국은행이 기준금리를 3.50%로 동결했습니다. 시장에서는 하반기 인하 가능성에 무게를 두는 분위기입니다.</div>
+            <div class="tags"><span>#기준금리</span><span>#한국은행</span><span>#통화정책</span></div>
+          </div>
+        </div>
+        <div class="news-highlight" data-article-id="krw-usd-1380">
+          <div>
+            <div class="headline">원·달러 환율 1,380원대, 수입물가 부담 커져</div>
+            <div class="body">미국 강달러 기조가 이어지며 원화 약세가 지속되고 있습니다. 수입 원자재 가격 상승으로 기업들의 부담이 커지고 있습니다.</div>
+            <div class="tags"><span>#환율</span><span>#원달러</span><span>#수입물가</span></div>
+          </div>
+        </div>
+        <div class="news-highlight" data-article-id="ai-data-investment" data-loop-clone="true" aria-hidden="true">
+          <div>
+            <div class="headline">AI 데이터 투자 확대, 국내 반도체 수혜 기대</div>
+            <div class="body">글로벌 빅테크 기업들이 생성형 AI 서비스 확대를 위해 데이터센터 투자를 지속하면서 AI 반도체 수요도 빠르게 증가하고 있습니다.</div>
+            <div class="tags"><span>#AI</span><span>#반도체</span><span>#HBM</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="highlight-dots" id="highlight-dots">
+        <img src="assets/img/icons/dot-active.svg" alt="" data-index="0" />
+        <img src="assets/img/icons/dot-inactive.svg" alt="" data-index="1" />
+        <img src="assets/img/icons/dot-inactive.svg" alt="" data-index="2" />
+        <img src="assets/img/icons/dot-inactive.svg" alt="" data-index="3" />
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="section-heading">
+        <div class="section-eyebrow blue">
+          <img src="assets/img/icons/badge-target.svg" alt="" style="width:19px;height:19px;" />
+          <span>맞춤 큐레이션</span>
+        </div>
+        <div class="section-title">현우님 관심 요약 뉴스</div>
+      </div>
+
+      <div class="news-list">
+        <div class="item" data-article-id="bok-rate-325">
+          <div class="info">
+            <div>
+              <div class="title">한국은행, 기준금리 3.25%로 동결</div>
+              <div class="desc">한국은행이 기준금리를 3.25%로 5회 연속 동결했다. 물가 안정과 가계부채 관리 사이 균형을 고려한 결정으로 풀이된다.</div>
+            </div>
+            <div class="byline">
+              <span data-eb="press-logo" data-source="매일경제" data-logo="assets/img/company-logos/maeil-kyungjae.png"></span>
+              <span>매일경제 · 7월 8일</span>
+            </div>
+          </div>
+          <img class="thumb" loading="lazy" src="assets/img/news/bok-rate-325.webp" alt="" />
+        </div>
+        <div class="item" data-article-id="samsung-hbm4">
+          <div class="info">
+            <div>
+              <div class="title">삼성전자, HBM4 양산 AI 메모리 경쟁</div>
+              <div class="desc">삼성전자가 차세대 고대역폭메모리 HBM4 양산에 들어갔다. 엔비디아향 공급 확대 기대감에 반도체 업종 전반이 강세를 보였다.</div>
+            </div>
+            <div class="byline">
+              <span data-eb="press-logo" data-source="머니투데이" data-logo="assets/img/company-logos/moneytoday.png"></span>
+              <span>머니투데이 · 7월 14일</span>
+            </div>
+          </div>
+          <img class="thumb" loading="lazy" src="assets/img/news/samsung-hbm4.webp" alt="" />
+        </div>
+        <div class="item" data-article-id="seoul-apt-price">
+          <div class="info">
+            <div>
+              <div class="title">서울 아파트값 3주 연속 상승, 강남권 주도</div>
+              <div class="desc">서울 아파트 매매가격이 3주 연속 오름세를 나타냈다. 강남·서초 등 재건축 단지 중심으로 상승 폭이 확대되는 모습이다.</div>
+            </div>
+            <div class="byline">
+              <span data-eb="press-logo" data-source="경기일보" data-logo="assets/img/company-logos/gyeonggi-ilbo.png"></span>
+              <span>경기일보 · 7월 13일</span>
+            </div>
+          </div>
+          <img class="thumb" loading="lazy" src="assets/img/news/seoul-apt-price.webp" alt="" />
+        </div>
+        <div class="item" data-article-id="fed-rate-cut-sep">
+          <div class="info">
+            <div>
+              <div class="title">美연준, 9월 금리 인하 시사, 시장 환호</div>
+              <div class="desc">미 연방준비제도 의장이 9월 회의에서 금리 인하 가능성을 시사했다. 뉴욕증시 3대 지수가 일제히 상승 마감했다.</div>
+            </div>
+            <div class="byline">
+              <span data-eb="press-logo" data-source="한겨례" data-logo="assets/img/company-logos/hankyoreh.png"></span>
+              <span>한겨례 · 7월 6일</span>
+            </div>
+          </div>
+          <img class="thumb" loading="lazy" src="assets/img/news/fed-rate-cut-sep.webp" alt="" />
+        </div>
+        <div class="item more-item" data-article-id="krw-usd-export">
+          <div class="info">
+            <div>
+              <div class="title">원달러 환율 1,380원대 안착, 수출기업 훈풍</div>
+              <div class="desc">원달러 환율이 1,380원대에서 안정세를 보이며 수출 중심 기업들의 실적 개선 기대감이 커지고 있다.</div>
+            </div>
+            <div class="byline">
+              <span data-eb="press-logo" data-source="서울경제" data-logo="assets/img/company-logos/seoul-economic.png"></span>
+              <span>서울경제 · 7월 11일</span>
+            </div>
+          </div>
+          <img class="thumb" loading="lazy" src="assets/img/news/krw-usd-export.webp" alt="" />
+        </div>
+        <div class="item more-item" data-article-id="skhynix-hbm-earnings">
+          <div class="info">
+            <div>
+              <div class="title">SK하이닉스, HBM 공급 확대로 실적 서프라이즈</div>
+              <div class="desc">SK하이닉스가 HBM 공급 확대에 힘입어 시장 예상치를 웃도는 실적을 발표했다. 반도체 업황 회복 기대가 높아지고 있다.</div>
+            </div>
+            <div class="byline">
+              <span data-eb="press-logo" data-source="조선비즈" data-logo="assets/img/company-logos/chosun-biz.png"></span>
+              <span>조선비즈 · 7월 9일</span>
+            </div>
+          </div>
+          <img class="thumb" loading="lazy" src="assets/img/news/skhynix-hbm-earnings.webp" alt="" />
+        </div>
+        <div class="item more-item" data-article-id="ai-semi-etf-inflow">
+          <div class="info">
+            <div>
+              <div class="title">AI 반도체 ETF에 자금 유입 지속, 개인 투자 확대</div>
+              <div class="desc">AI 반도체 관련 ETF로 개인 투자자 자금이 꾸준히 유입되고 있다. 하반기 반도체 업황 개선 기대가 반영된 것으로 풀이된다.</div>
+            </div>
+            <div class="byline">
+              <span data-eb="press-logo" data-source="한국경제" data-logo="assets/img/company-logos/hankyung.png"></span>
+              <span>한국경제 · 7월 5일</span>
+            </div>
+          </div>
+          <img class="thumb" loading="lazy" src="assets/img/news/ai-semi-etf-inflow.webp" alt="" />
+        </div>
+      </div>
+
+      <button type="button" class="more-news-btn" id="more-news-btn">
+        <span id="more-news-label">뉴스 더 보기</span>
+        <span class="gicon" id="more-news-icon" style="font-size:24px;width:24px;height:24px;" role="img" aria-label="">keyboard_arrow_down</span>
+      </button>
+    </div>
+
+    <div class="card-section trend-section">
+      <div class="section-heading">
+        <div class="section-eyebrow blue">
+          <span class="gicon" style="font-size:18px;width:18px;height:18px;" role="img" aria-label="">campaign</span>
+          <span>지금 화제</span>
+        </div>
+        <div class="section-title">대한민국 트렌드 픽</div>
+      </div>
+      <div class="trend-row">
+        <div class="trend-card" data-article-id="jeonse-fraud-support">
+          <div class="image-wrap">
+            <img class="bg" loading="lazy" src="assets/img/news/jeonse-fraud-support.webp" alt="" />
+            <div class="tags"><span>#전세사기</span><span>#임대차법</span><span>#주거안정</span></div>
+          </div>
+          <div>
+            <div class="headline">전세사기 피해자 지원 확대, 국회 통과?</div>
+            <div class="byline">
+              <span data-eb="press-logo" data-source="조선일보" data-logo="assets/img/company-logos/chosun-ilbo.png"></span>
+              <span>조선일보 · 5시간 전</span>
+            </div>
+          </div>
+        </div>
+        <div class="trend-card" data-article-id="dining-cost-inflation">
+          <div class="image-wrap">
+            <img class="bg" loading="lazy" src="assets/img/news/dining-cost-inflation.webp" alt="" />
+            <div class="tags"><span>#외식물가</span><span>#장바구니물가</span><span>#소비자심리</span></div>
+          </div>
+          <div>
+            <div class="headline">외식물가 8개월 연속 상승, 밥값 부담 커져</div>
+            <div class="byline">
+              <span data-eb="press-logo" data-source="한겨레" data-logo="assets/img/company-logos/hankyoreh.png"></span>
+              <span>한겨레 · 5시간 전</span>
+            </div>
+          </div>
+        </div>
+        <div class="trend-card" data-article-id="electric-bill-hike">
+          <div class="image-wrap">
+            <img class="bg" loading="lazy" src="assets/img/news/electric-bill-hike.webp" alt="" />
+            <div class="tags"><span>#전기요금</span><span>#에너지물가</span><span>#서민경제</span></div>
+          </div>
+          <div>
+            <div class="headline">전기요금 인상 논의 본격화, 서민 부담 가중 우려</div>
+            <div class="byline">
+              <span data-eb="press-logo" data-source="이데일리" data-logo="assets/img/company-logos/edaily.png"></span>
+              <span>이데일리 · 3시간 전</span>
+            </div>
+          </div>
+        </div>
+        <div class="trend-card" data-article-id="household-debt-1900t">
+          <div class="image-wrap">
+            <img class="bg" loading="lazy" src="assets/img/news/household-debt-1900t.webp" alt="" />
+            <div class="tags"><span>#가계부채</span><span>#대출규제</span><span>#DSR</span></div>
+          </div>
+          <div>
+            <div class="headline">가계부채 1900조 돌파, 정부 추가 대출규제 검토</div>
+            <div class="byline">
+              <span data-eb="press-logo" data-source="매일경제" data-logo="assets/img/company-logos/maeil-kyungjae.png"></span>
+              <span>매일경제 · 2시간 전</span>
+            </div>
+          </div>
+        </div>
+        <div class="trend-card" data-article-id="youth-unemployment-record">
+          <div class="image-wrap">
+            <img class="bg" loading="lazy" src="assets/img/news/youth-unemployment-record.webp" alt="" onerror="window.EB &amp;&amp; EB.media.showThumbPlaceholder(this)" />
+            <div class="tags"><span>#청년실업</span><span>#고용시장</span><span>#일자리</span></div>
+          </div>
+          <div>
+            <div class="headline">청년 체감실업률 역대 최고, 고용시장 한파 지속</div>
+            <div class="byline">
+              <span data-eb="press-logo" data-source="한국경제" data-logo="assets/img/company-logos/hankyung.png"></span>
+              <span>한국경제 · 1시간 전</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div data-eb="tab-bar" data-active="home"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<script src="assets/js/device-mockup.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/common.js"></script>
+<script src="assets/js/api-news-client.js"></script>
+<script src="assets/js/live-feed-inject.js"></script>
+<script>
+  document.getElementById('play-briefing-btn').addEventListener('click', function () {
+    window.location.href = 'daily-briefing.html';
+  });
+
+  // 데일리브리핑을 중간에 나갔다가 돌아온 경우, 카드에 "처음부터"가 아니라
+  // "이어보기" 상태를 보여준다 (EB.appState.briefingProgress는 daily-briefing.html
+  // 뒤로가기 시점에 저장됨).
+  (function () {
+    var state = EB.appState.load();
+    if (!state.briefingProgress) return;
+    var current = state.briefingProgress.current;
+    var total = state.briefingProgress.total;
+    var headlineEl = document.querySelector('.ai-card .headline');
+    var sublineEl = document.querySelector('.ai-card .subline');
+    if (headlineEl) headlineEl.textContent = (current + 1) + ' / ' + total + '건 읽는 중';
+    if (sublineEl) sublineEl.textContent = '이어보기';
+  })();
+
+  document.querySelectorAll('.story').forEach(function (el) {
+    el.addEventListener('click', function () {
+      EB.showToast('서비스 준비중입니다.');
+    });
+  });
+
+  document.querySelectorAll('.news-highlight, .news-list .item, .trend-card').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var id = el.getAttribute('data-article-id');
+      if (id) { window.location.href = 'article.html?id=' + encodeURIComponent(id); return; }
+      window.location.href = 'article.html';
+    });
+  });
+
+  var highlightRow = document.getElementById('news-highlight-row');
+  var highlightDots = document.querySelectorAll('#highlight-dots img');
+  var highlightCards = highlightRow.querySelectorAll('.news-highlight');
+  var highlightRealCount = highlightDots.length;
+  var activeDotIndex = 0;
+  var highlightSettleTimer = null;
+  highlightRow.addEventListener('scroll', function () {
+    var cardWidth = highlightCards[0].offsetWidth + 12;
+    var rawIndex = Math.round(highlightRow.scrollLeft / cardWidth);
+    var dotIndex = rawIndex % highlightRealCount;
+    if (dotIndex !== activeDotIndex) {
+      activeDotIndex = dotIndex;
+      highlightDots.forEach(function (dot, i) {
+        dot.src = window.EB_ICONS.iconSrc(i === activeDotIndex ? 'dot-active' : 'dot-inactive');
+      });
+    }
+    // Once the swipe settles on the cloned first card (past the last real one),
+    // jump back to the real first card instantly so the row loops seamlessly.
+    clearTimeout(highlightSettleTimer);
+    highlightSettleTimer = setTimeout(function () {
+      var settledIndex = Math.round(highlightRow.scrollLeft / cardWidth);
+      if (settledIndex >= highlightRealCount) highlightRow.scrollLeft = 0;
+    }, 120);
+  });
+
+  var newsList = document.querySelector('.news-list');
+  var moreNewsLabel = document.getElementById('more-news-label');
+  var moreNewsIcon = document.getElementById('more-news-icon');
+  document.getElementById('more-news-btn').addEventListener('click', function () {
+    var expanded = newsList.classList.toggle('expanded');
+    document.querySelectorAll('.news-list .item.more-item, .news-list .item.was-more-item').forEach(function (el) {
+      el.classList.toggle('more-item', !expanded);
+      el.classList.toggle('was-more-item', expanded);
+    });
+    moreNewsLabel.textContent = expanded ? '뉴스 접기' : '뉴스 더 보기';
+    moreNewsIcon.textContent = expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down';
+  });
+</script>
+
+</body>
+</html>

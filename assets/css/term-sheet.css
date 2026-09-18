@@ -1,0 +1,47 @@
+/*
+  Term definition bottom sheet — shared component.
+
+  Markup contract (place as siblings, inside whatever positioned container
+  should be dimmed — e.g. `.device` for a full-page overlay, or a specific
+  card container to scope the dim to just that card):
+
+    <div class="term-sheet-overlay" id="term-overlay-bg"></div>
+    <div class="term-sheet" id="term-popup">
+      <div class="ts-handle"></div>
+      <div class="ts-body">
+        <div class="ts-title" id="term-popup-title"></div>
+        <div class="ts-desc" id="term-popup-desc"></div>
+      </div>
+      <button type="button" class="ts-save">용어저장</button>
+    </div>
+
+  Any element with a `data-term="<id>"` attribute opens the sheet for that
+  term (see assets/js/term-sheet.js, which owns the open/close/save wiring
+  and the term id -> title/definition/category lookup).
+*/
+
+.term-sheet-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.2);
+  opacity: 0; visibility: hidden; transition: opacity 0.25s ease;
+  z-index: 50;
+}
+.term-sheet-overlay.visible { opacity: 1; visibility: visible; }
+
+.term-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: #fff; border-radius: 12px 12px 0 0;
+  box-shadow: 0 0 7.5px rgba(0,0,0,0.15);
+  padding: 20px 16px; display: flex; flex-direction: column; align-items: center;
+  transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  z-index: 51;
+}
+.term-sheet.visible { transform: translateY(0); }
+.term-sheet .ts-handle { width: 53px; height: 4px; border-radius: 999px; background: #C2C2C2; margin-bottom: 16px; flex-shrink: 0; }
+.term-sheet .ts-body { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+.term-sheet .ts-title { font-weight: var(--font-weight-semibold); font-size: 16px; color: var(--color-brand-600); line-height: 1.6; text-decoration: underline; }
+.term-sheet .ts-desc { font-weight: var(--font-weight-regular); font-size: 14px; color: #000; line-height: 1.6; }
+.term-sheet .ts-save {
+  width: 100%; height: 40px; border-radius: 8px; background: var(--color-brand-600); margin-top: 20px;
+  color: #fff; border: none; font-family: inherit; font-weight: var(--font-weight-semibold); font-size: 14px;
+  cursor: pointer;
+}

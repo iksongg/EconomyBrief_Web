@@ -1,0 +1,353 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="favicon.ico" />
+<title>이코노미브리프 - 뉴스피드</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<link rel="stylesheet" href="design-system/tokens/colors.css" />
+<link rel="stylesheet" href="design-system/tokens/typography.css" />
+<link rel="stylesheet" href="design-system/tokens/layout.css" />
+<link rel="stylesheet" href="assets/css/common.css" />
+<link rel="stylesheet" href="assets/css/device-mockup.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-family-base);
+    background: #EAEBEF;
+    min-height: 100dvh;
+    display: flex; align-items: flex-start; justify-content: center;
+  }
+  .device { background: #ffffff; }
+  .scroll-area { padding-bottom: 90px; }
+
+  /* reset native button chrome — every "button" below is a layout container, not a form control */
+  button {
+    appearance: none; -webkit-appearance: none;
+    background: none; border: none; box-shadow: none; outline: none;
+    font: inherit; color: inherit; text-align: left; cursor: pointer;
+  }
+
+  .filter-row { display: flex; gap: 4px; padding: 20px; overflow-x: auto; background: #fff; }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-row button {
+    flex-shrink: 0; height: 36px; border-radius: 50px; padding: 0 17px; font-size: 16px;
+    background: #fff; border: 1px solid var(--color-border-default); color: #000;
+  }
+  .filter-row button.active { background: var(--color-brand-600); border-color: var(--color-brand-600); color: #fff; font-weight: var(--font-weight-bold); }
+
+  .trending-card {
+    background: #F6F7FB; border-radius: 16px; padding: 16px; margin: 0 20px 0; display: flex; flex-direction: column; gap: 8px;
+  }
+  .trending-card .tc-label { font-weight: var(--font-weight-bold); font-size: 12px; color: #000; }
+  .trending-card .tc-viewport { overflow: hidden; width: 100%; }
+  .trending-card .tc-track { display: flex; flex-direction: column; transition: transform 0.5s ease; }
+  .trending-card .tc-item { display: flex; align-items: center; justify-content: space-between; width: 100%; flex-shrink: 0; }
+  .trending-card .tc-item .tc-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+  .trending-card .tc-num { width: 18px; height: 18px; border-radius: 4px; background: var(--color-brand-600); color: #fff; font-weight: var(--font-weight-bold); font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .trending-card .tc-text { font-weight: var(--font-weight-medium); font-size: 16px; color: #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .trending-card .tc-item .gicon { font-size: 20px; width: 20px; height: 20px; flex-shrink: 0; color: #000; }
+
+  .timeline-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; }
+  .timeline-head .th-title { font-weight: var(--font-weight-semibold); font-size: 14px; color: #000; }
+  .timeline-head .th-sort { display: flex; align-items: center; gap: 4px; font-size: 14px; color: #000; }
+  .timeline-head .th-sort .gicon { font-size: 18px; width: 18px; height: 18px; color: #000; }
+
+  .timeline-list { position: relative; padding: 0 20px 20px 51px; display: flex; flex-direction: column; gap: 20px; }
+  /* top/height are set by JS to span exactly from the first dot's center to the
+     last dot's center — card heights vary with content, so a fixed top/bottom
+     guess either goes invisible (sub-pixel border-left on some mobile browsers)
+     or overshoots past the last dot. background-image (not border) renders the
+     dashes reliably at any DPI. */
+  .timeline-line { position: absolute; left: 24.5px; top: 0; width: 2px; height: 0; background-image: repeating-linear-gradient(to bottom, #82B0F9 0, #82B0F9 4px, transparent 4px, transparent 8px); }
+  .timeline-card {
+    position: relative; border: 1px solid #E6E9F0; border-radius: 16px; padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .timeline-card::before {
+    content: ''; position: absolute; left: -31px; top: 24px; width: 11px; height: 11px; border-radius: 50%; background: #82B0F9;
+  }
+  .timeline-card.first::before { background: var(--color-brand-600); }
+  .timeline-card .tl-time { font-weight: var(--font-weight-medium); font-size: 14px; color: #5B5E73; }
+  .timeline-card.first .tl-time { font-weight: var(--font-weight-bold); color: var(--color-brand-600); }
+  .timeline-card .tl-body { display: flex; gap: 16px; align-items: flex-start; }
+  .timeline-card .tl-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+  /* line-clamp (not a fixed px height) so real API titles/descriptions -
+     often longer than the original mock text - ellipsize cleanly at the
+     same line count the mock content already fit in, instead of the
+     mock-only fixed height silently mid-word clipping longer real text. */
+  .timeline-card .tl-title { font-weight: var(--font-weight-bold); font-size: 16px; color: #000; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .timeline-card .tl-desc { font-weight: var(--font-weight-regular); font-size: 14px; color: #101112; margin-top: 4px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .timeline-card .tl-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+  .timeline-card .tl-tags span { border: 1px solid var(--color-border-default); border-radius: 999px; padding: 8px 12px; font-size: 10px; color: #000; }
+  .timeline-card .tl-thumb { width: 61px; height: 61px; border-radius: 5.526px; object-fit: cover; flex-shrink: 0; }
+  .timeline-card.filtered-out { display: none; }
+  .timeline-empty { display: none; padding: 40px 20px; text-align: center; font-size: 14px; color: #868686; }
+</style>
+</head>
+<body>
+
+<div class="portfolio-stage">
+<div class="iphone-device">
+<div class="device-bezel">
+<div class="app-screen">
+<div class="dynamic-island"></div>
+<div class="ios-status-bar">
+  <span class="status-time">9:41</span>
+  <div class="status-icons">
+    <img src="assets/img/icons/status-bar-levels.svg" alt="" width="100" height="22" />
+  </div>
+</div>
+
+<div class="device">
+  <div class="scroll-area">
+
+    <div data-eb="header-row-main"></div>
+
+    <div class="filter-row">
+      <button type="button" class="active" data-category="all">전체</button>
+      <button type="button" data-category="AI추천">AI추천</button>
+      <button type="button" data-category="반도체">반도체</button>
+      <button type="button" data-category="금리">금리</button>
+      <button type="button" data-category="환율">환율</button>
+      <button type="button" data-category="ETF">ETF</button>
+    </div>
+
+    <div class="trending-card">
+      <div class="tc-label">지금 뜨는 뉴스</div>
+      <div class="tc-viewport" id="tc-viewport">
+        <div class="tc-track" id="tc-track">
+          <button type="button" class="tc-item" data-article-id="us-cpi-april"><div class="tc-left"><span class="tc-num">1</span><span class="tc-text">미국 4월 CPI 발표</span></div><span class="gicon" role="img" aria-label="">arrow_forward_ios</span></button>
+          <button type="button" class="tc-item" data-article-id="kospi-2750-close"><div class="tc-left"><span class="tc-num">2</span><span class="tc-text">코스피 2,750선 회복 마감</span></div><span class="gicon" role="img" aria-label="">arrow_forward_ios</span></button>
+          <button type="button" class="tc-item" data-article-id="nvidia-next-ai-chip"><div class="tc-left"><span class="tc-num">3</span><span class="tc-text">엔비디아, 차세대 AI칩 공개</span></div><span class="gicon" role="img" aria-label="">arrow_forward_ios</span></button>
+          <button type="button" class="tc-item" data-article-id="krw-usd-1379"><div class="tc-left"><span class="tc-num">4</span><span class="tc-text">원·달러 환율 1,379원 돌파</span></div><span class="gicon" role="img" aria-label="">arrow_forward_ios</span></button>
+          <button type="button" class="tc-item" data-article-id="bok-rate-hold-2"><div class="tc-left"><span class="tc-num">5</span><span class="tc-text">한국은행 기준금리 3.25%로 동결</span></div><span class="gicon" role="img" aria-label="">arrow_forward_ios</span></button>
+          <button type="button" class="tc-item" data-article-id="oil-85-dollar"><div class="tc-left"><span class="tc-num">6</span><span class="tc-text">국제유가 배럴당 85달러 상승</span></div><span class="gicon" role="img" aria-label="">arrow_forward_ios</span></button>
+          <button type="button" class="tc-item" data-article-id="samsung-3nm-foundry"><div class="tc-left"><span class="tc-num">7</span><span class="tc-text">삼성전자 3나노 파운드리 수주 확대</span></div><span class="gicon" role="img" aria-label="">arrow_forward_ios</span></button>
+          <button type="button" class="tc-item" data-article-id="tesla-earnings-volatility"><div class="tc-left"><span class="tc-num">8</span><span class="tc-text">테슬라 실적 발표 앞두고 주가 변동성 확대</span></div><span class="gicon" role="img" aria-label="">arrow_forward_ios</span></button>
+          <button type="button" class="tc-item" data-article-id="china-export-miss"><div class="tc-left"><span class="tc-num">9</span><span class="tc-text">중국 4월 수출 예상치 하회</span></div><span class="gicon" role="img" aria-label="">arrow_forward_ios</span></button>
+          <button type="button" class="tc-item" data-article-id="fed-hike-signal"><div class="tc-left"><span class="tc-num">10</span><span class="tc-text">美 연준 위원, 추가 금리인상 가능성 시사</span></div><span class="gicon" role="img" aria-label="">arrow_forward_ios</span></button>
+          <button type="button" class="tc-item" data-article-id="us-cpi-april" aria-hidden="true" tabindex="-1"><div class="tc-left"><span class="tc-num">1</span><span class="tc-text">미국 4월 CPI 발표</span></div><span class="gicon" role="img" aria-label="">arrow_forward_ios</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline-head">
+      <span class="th-title">실시간 타임라인</span>
+      <button type="button" class="th-sort"><span>최근 추가순</span><span class="gicon" role="img" aria-label="">sync_alt</span></button>
+    </div>
+
+    <div class="timeline-empty" id="timeline-empty">해당 카테고리의 뉴스가 아직 없어요.</div>
+
+    <div class="timeline-list" id="timeline-list">
+      <div class="timeline-line"></div>
+
+      <button type="button" class="timeline-card first" data-article="bok-rate-hold-timeline" data-category="물가">
+        <div class="tl-time">09:32</div>
+        <div class="tl-body">
+          <div class="tl-text">
+            <div>
+              <div class="tl-title">한국은행 기준금리 3.25%로 동결</div>
+              <div class="tl-desc">글로벌 관세 전쟁 우려로 달러 환율이 금융위기 이후 최고치를 기록했습니다.</div>
+            </div>
+            <div class="tl-tags"><span>#물가</span><span>#CPI</span><span>#인플레이션</span></div>
+          </div>
+          <img class="tl-thumb" loading="lazy" src="assets/img/feed-thumb-1.webp" alt="" />
+        </div>
+      </button>
+
+      <button type="button" class="timeline-card" data-article="nvidia-next-ai-chip" data-category="반도체">
+        <div class="tl-time">09:12</div>
+        <div class="tl-body">
+          <div class="tl-text">
+            <div>
+              <div class="tl-title">엔비디아, 차세대 AI칩 공개</div>
+              <div class="tl-desc">성능 1.5배 향상, HBM4 지원으로 AI 연산 속도 크게 개선</div>
+            </div>
+            <div class="tl-tags"><span>#엔비디아</span><span>#AI반도체</span></div>
+          </div>
+          <img class="tl-thumb" loading="lazy" src="assets/img/feed-thumb-2.webp" alt="" />
+        </div>
+      </button>
+
+      <button type="button" class="timeline-card" data-article="krw-usd-1379" data-category="환율">
+        <div class="tl-time">08:45</div>
+        <div class="tl-body">
+          <div class="tl-text">
+            <div>
+              <div class="tl-title">원,달러 환율 1,379원 돌파</div>
+              <div class="tl-desc">달러 강세 지속, 외국인 주식 순매도 확대로 원화 약세 압력 확대</div>
+            </div>
+            <div class="tl-tags"><span>#환율</span><span>#달러</span></div>
+          </div>
+          <img class="tl-thumb" loading="lazy" src="assets/img/news/krw-usd-1379.webp" alt="" />
+        </div>
+      </button>
+
+      <button type="button" class="timeline-card" data-article="bok-rate-hold-2" data-category="금리">
+        <div class="tl-time">08:32</div>
+        <div class="tl-body">
+          <div class="tl-text">
+            <div>
+              <div class="tl-title">한국은행 기준금리 3.25%로 동결</div>
+              <div class="tl-desc">성장 둔화 우려에도 물가 안정 우선 고려해 기준금리 동결 결정</div>
+            </div>
+            <div class="tl-tags"><span>#한국은행</span><span>#금리</span></div>
+          </div>
+          <img class="tl-thumb" loading="lazy" src="assets/img/news/bok-rate-hold-2.webp" alt="" />
+        </div>
+      </button>
+
+      <button type="button" class="timeline-card" data-article="oil-price-up" data-category="에너지">
+        <div class="tl-time">07:15</div>
+        <div class="tl-body">
+          <div class="tl-text">
+            <div>
+              <div class="tl-title">국제유가 소폭 상승</div>
+              <div class="tl-desc">중동 긴장감 고조 및 OPEC 감산 연장 가능성에 유가 상승</div>
+            </div>
+            <div class="tl-tags"><span>#유가</span><span>#에너지</span></div>
+          </div>
+          <img class="tl-thumb" loading="lazy" src="assets/img/news/oil-price-up.webp" alt="" />
+        </div>
+      </button>
+    </div>
+
+  </div>
+
+  <div data-eb="tab-bar" data-active="feed"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<script src="assets/js/device-mockup.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/common.js"></script>
+<script src="assets/js/api-news-client.js"></script>
+<script src="assets/js/live-feed-inject.js"></script>
+<script>
+  (function () {
+    var track = document.getElementById('tc-track');
+    var items = track.querySelectorAll('.tc-item');
+    var realCount = items.length - 1; // last item is the clone of #1, used for a seamless loop
+    // offsetHeight, not getBoundingClientRect().height: the desktop portfolio mockup
+    // (assets/js/device-mockup.js) applies `transform: scale(...)` to an ancestor
+    // (.iphone-device) sized off window.innerWidth/innerHeight, so it never gets cut
+    // off on a short/narrow desktop window. getBoundingClientRect() reports the
+    // POST-scale, on-screen size — e.g. 19.2px instead of the item's real 20px at
+    // scale 0.96 — while this value is then used as a LOCAL translateY step on
+    // .tc-track, which (like any CSS transform) operates in the track's own
+    // pre-ancestor-scale coordinate space. Feeding it a scaled length made every
+    // slide undershoot by (1 - scale) * itemHeight, an error that compounds every
+    // tick (index * itemHeight), which is exactly why the stop position drifted
+    // further off target the longer the ticker ran, only on the scaled-down mockup,
+    // and only when the window was short/narrow enough for the mockup's fit-to-
+    // viewport scale to kick in. offsetHeight is a layout-box measurement, immune to
+    // any ancestor's transform (scale or otherwise), so it stays correct at any
+    // mockup scale — the fixed 402x874 app screen's own coordinate system, kept
+    // separate from the browser viewport that the mockup scale reacts to.
+    var itemHeight = items[0].offsetHeight;
+    var index = 0;
+
+    document.getElementById('tc-viewport').style.height = itemHeight + 'px';
+
+    items.forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = el.getAttribute('data-article-id');
+        window.location.href = id ? 'article.html?id=' + encodeURIComponent(id) : 'article.html';
+      });
+    });
+
+    setInterval(function () {
+      index += 1;
+      track.style.transition = 'transform 0.5s ease';
+      track.style.transform = 'translateY(-' + (index * itemHeight) + 'px)';
+      if (index === realCount) {
+        setTimeout(function () {
+          track.style.transition = 'none';
+          track.style.transform = 'translateY(0px)';
+          index = 0;
+        }, 500);
+      }
+    }, 2500);
+  })();
+  document.querySelectorAll('.timeline-card').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var id = el.getAttribute('data-article');
+      window.location.href = id ? 'article.html?id=' + encodeURIComponent(id) : 'article.html';
+    });
+  });
+
+  document.querySelector('.th-sort').addEventListener('click', function () {
+    EB.showToast('서비스 준비중입니다.');
+  });
+
+  var layoutTimelineLine = (function () {
+    var list = document.querySelector('.timeline-list');
+    var line = document.querySelector('.timeline-line');
+    if (!list || !line) return function () {};
+    var DOT_CENTER = 24 + 11 / 2; // matches .timeline-card::before's top:24px, 11px circle
+
+    // Distance from `ancestor`'s own top edge to `el`'s top edge, walking the
+    // offsetParent chain — entirely in `ancestor`'s local (pre-transform) coordinate
+    // space. Unlike getBoundingClientRect(), this is unaffected by any ancestor's CSS
+    // transform (e.g. the desktop portfolio mockup's `transform: scale(...)` on
+    // .iphone-device — see assets/js/device-mockup.js): getBoundingClientRect()
+    // reports the post-scale screen position, and assigning that straight into a
+    // local CSS top/height (itself interpreted pre-scale, inside the same scaled
+    // ancestor) double-applies the scale once the browser paints it — the line
+    // rendered at scale^2 of its intended length instead of scale, landing short of
+    // the last dot whenever the mockup was scaled down. offsetTop is a layout-box
+    // value, immune to any ancestor transform, so it stays correct at any scale.
+    function localTopWithin(el, ancestor) {
+      var y = 0, node = el;
+      while (node && node !== ancestor) {
+        y += node.offsetTop;
+        node = node.offsetParent;
+      }
+      return y;
+    }
+
+    return function layoutLine() {
+      var cards = Array.prototype.filter.call(document.querySelectorAll('.timeline-card'), function (c) {
+        return !c.classList.contains('filtered-out');
+      });
+      if (cards.length < 2) { line.style.height = '0px'; return; }
+      var firstY = localTopWithin(cards[0], list) + DOT_CENTER;
+      var lastY = localTopWithin(cards[cards.length - 1], list) + DOT_CENTER;
+      line.style.top = firstY + 'px';
+      line.style.height = Math.max(0, lastY - firstY) + 'px';
+    };
+  })();
+  layoutTimelineLine();
+  window.addEventListener('resize', layoutTimelineLine);
+  window.addEventListener('load', layoutTimelineLine);
+
+  // 카테고리 필터: 타임라인 카드의 실제 data-category를 기준으로 보이는 카드만
+  // 남기고 나머지는 filtered-out으로 숨긴다("전체"는 전부 표시). 매칭되는 카드가
+  // 하나도 없으면(예: 현재 목데이터에 없는 카테고리) 빈 상태 문구를 보여준다.
+  document.querySelectorAll('.filter-row button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.filter-row button').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+
+      var category = btn.getAttribute('data-category');
+      var visibleCount = 0;
+      document.querySelectorAll('.timeline-card').forEach(function (card) {
+        var matches = category === 'all' || card.getAttribute('data-category') === category;
+        card.classList.toggle('filtered-out', !matches);
+        if (matches) visibleCount++;
+      });
+      document.getElementById('timeline-list').style.display = visibleCount ? '' : 'none';
+      document.getElementById('timeline-empty').style.display = visibleCount ? 'none' : 'block';
+      layoutTimelineLine();
+    });
+  });
+</script>
+
+</body>
+</html>

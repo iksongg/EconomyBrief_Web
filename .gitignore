@@ -1,0 +1,12 @@
+# macOS resource-fork / metadata clutter
+._*
+.DS_Store
+
+# Local Claude Code tool settings (machine-specific, not project config)
+.claude/
+
+# Server-only secrets and local runtime output
+.env
+.env.*
+!.env.example
+*.log
