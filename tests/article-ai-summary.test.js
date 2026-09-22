@@ -249,14 +249,14 @@ function settle() {
     assert.deepStrictEqual(qnaAnswers(doc5), QNA.map(function (q) { return q.a; }), 'article.qna가 없으면 Q&A만 독립적으로 템플릿 fallback을 써야 한다');
   }
 
-  // ---- TEST 6: source-only fallback ("OOO에서 보도한 소식입니다.")가 그대로 --
+  // ---- TEST 6: 제목 기반 fallback bullet("OOO에 대한 핵심 요약입니다.")이
   // AI 핵심 요약으로 노출돼도 article-ai.js가 이를 특별 취급하지 않고 그대로
   // 통과시키는지 확인한다 (이 문구 자체가 news-data.js의 buildSummary()에서
   // 왜/어떻게 나오는지는 tests/ai-summary.test.js가 이미 검증함 - 여기서는
   // article-ai.js가 그 값을 가로채 다른 문구로 바꾸거나 감추지 않는지만
   // 확인한다).
   {
-    var sourceOnlyResult = { bullets: ['연합뉴스에서 보도한 소식입니다.'], qna: [] };
+    var sourceOnlyResult = { bullets: ['단신에 대한 핵심 요약입니다.'], qna: [] };
     var article3 = {
       id: 'test-source-only', title: '단신', category: '금리', source: '연합뉴스',
       date: '2026.09.11', keywords: [], description: '연합뉴스 보도',

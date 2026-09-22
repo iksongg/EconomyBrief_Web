@@ -148,9 +148,54 @@
     text = text.replace(/(입력|수정|전송|송고)\s*(시간|일시)?\s*[:：]?\s*\d{4}[.\-]\s*\d{1,2}[.\-]\s*\d{1,2}\.?\s*(오전|오후)?\s*\d{1,2}[:시]\s*\d{1,2}분?/g, ' ');
     text = text.replace(/(오전|오후)?\s*\d{1,2}시\s*(\d{1,2}분)?\s*현재/g, ' ');
     text = text.replace(/현재\s*시각/g, ' ');
+    // Only a TRAILING "..."/"…" (the very last thing in the string) is
+    // NAVER's own snippet-truncation marker - the description simply ran
+    // out there, mid-thought, with no way to know how it actually ends.
+    // Must run BEFORE stripEllipsisMarkers() below (which would otherwise
+    // erase that trailing marker into an indistinguishable space) and drop
+    // that incomplete tail back to the last real sentence ending, if any -
+    // never guessing or fabricating what came after. Deliberately narrower
+    // than stripEllipsisMarkers(): a "..." anywhere else (mid-text) is left
+    // completely untouched here, exactly as before - see this function's
+    // own history below for why treating every "..." as untrustworthy was
+    // already tried and reverted.
+    text = stripTrailingTruncatedFragment(text);
     text = stripEllipsisMarkers(text);
 
     return text.replace(/\s{2,}/g, ' ').trim();
+  }
+
+  // Real production bug this fixes: NAVER's search-snippet API caps snippet
+  // length and appends "..."/"…" when it cuts a sentence off mid-thought
+  // (e.g. "...금리가 오르면서 금융불안이...") - stripEllipsisMarkers() alone
+  // used to just erase that trailing marker into a space, leaving the
+  // incomplete fragment looking like a "complete" sentence with nowhere to
+  // end (no closing punctuation, reads as if it were simply cut off, which
+  // is literally what happened). This targets ONLY a truncation marker at
+  // the very end of the string - never a mid-text "..." used as the
+  // original article's own editorial pause within an otherwise complete
+  // sentence (e.g. '그는 "요즘 경기가... 사실 나쁘다"고 말했다.' is a real,
+  // complete sentence; treating that "..." as untrustworthy too and
+  // discarding what came before it is exactly the "dropped everything from
+  // the first ellipsis onward" regression stripEllipsisMarkers()'s own
+  // comment above describes and was reverted for - this function never
+  // touches a non-trailing "...").
+  function stripTrailingTruncatedFragment(text) {
+    var trimmed = String(text || '').trim();
+    var match = trimmed.match(/^([\s\S]*?)(\.{3,}|…)\s*$/);
+    if (!match) return trimmed; // doesn't end in a truncation marker - nothing to do
+    var before = match[1];
+    // Any EARLIER "..."/"…" inside `before` must not be mistaken for a real
+    // terminator by the scan below (a naive [.!?] scan would match one of
+    // its dots as if it were a period) - masked here with same-length
+    // placeholders so position/length math against the original `before`
+    // stays valid, without altering `before` itself.
+    var masked = before.replace(/\.{3,}|…/g, function (m) { return new Array(m.length + 1).join('x'); });
+    // A real terminator must be followed by whitespace or end-of-string -
+    // same rule splitSentences() already uses - so a decimal point like
+    // "1.25%" is never mistaken for one.
+    var lastReal = masked.match(/^[\s\S]*[.!?](?=\s|$)/);
+    return lastReal ? before.slice(0, lastReal[0].length).trim() : '';
   }
 
   // Removes only the literal "..."/"…" GLYPH itself - never any surrounding
@@ -220,14 +265,18 @@
     // inventing anything, is to merge every real sentence into ONE
     // combined recap bullet instead of parallel per-sentence bullets.
     var bullets = sentences.length ? [sentences.join(' ')] : [];
-    // No real sentence survived (no real description at all, or its only
-    // sentence happened to equal the title) - rather than leaving the
-    // "핵심 내용" card completely empty, state the one fact this project can
-    // say with certainty (which real outlet reported it) as plain text, with
-    // no role label (it isn't "무슨 일" - it's an honest admission that the
-    // real "무슨 일" isn't available yet).
-    if (!bullets.length && article.source) {
-      bullets.push(article.source + '에서 보도한 소식입니다.');
+    // No real sentence survived (no real description at all - including a
+    // NAVER snippet that's ENTIRELY a truncated fragment with no genuine
+    // sentence ending anywhere in it, see stripTrailingTruncatedFragment()
+    // above - or its only sentence happened to equal the title). A generic
+    // "OO에서 보도한 소식입니다" filler line used to go here, but that reads
+    // as meaningless placeholder text with no real information in it - the
+    // article's own title is real, verified content this project already
+    // has with certainty, so it's used here instead (same fallback style
+    // api-news-client.js's buildDeepResearch() already uses for its
+    // `summary` field when there's nothing else real to say).
+    if (!bullets.length) {
+      bullets.push(article.title + '에 대한 핵심 요약입니다.');
     }
 
     // qna mirrors the same real sentences into the original 3-question

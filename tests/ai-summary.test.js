@@ -168,8 +168,12 @@ function loadEBNews() {
     assert.strictEqual(b.indexOf('머니투데이 보도'), -1, 'placeholder description("{source} 보도")이 bullet에 그대로 노출되면 안 된다: "' + b + '"');
     assert.strictEqual(b.indexOf('무슨 일:'), -1, '실제 내용이 없을 때 "무슨 일:" 라벨을 붙이면 안 된다 (근거 없는 내용을 "무슨 일"이라고 주장하는 셈)');
   });
-  assert.ok(rPlaceholder.bullets.length >= 1, 'placeholder인 경우에도 카드가 완전히 비어있으면 안 되고, 확실한 사실(출처)만 담은 bullet이 있어야 한다');
-  assert.strictEqual(rPlaceholder.bullets[0], '머니투데이에서 보도한 소식입니다.');
+  assert.ok(rPlaceholder.bullets.length >= 1, 'placeholder인 경우에도 카드가 완전히 비어있으면 안 되고, 확실한 사실(제목)만 담은 bullet이 있어야 한다');
+  // "{source}에서 보도한 소식입니다" 필러 문구는 실제 정보가 없는 의미 없는
+  // placeholder 텍스트로 다시 지적되어(실제 프로덕션 사용자 피드백)
+  // 제목 기반 문구로 교체됨 - buildDeepResearch()의 summary 필드가 이미
+  // 쓰던 것과 동일한 스타일, 지어낸 내용 없이 이미 확보된 실제 제목만 사용.
+  assert.strictEqual(rPlaceholder.bullets[0], placeholderArticle.title + '에 대한 핵심 요약입니다.');
   // 실제 sentences가 하나도 없으므로(placeholder), qna는 억지로 채우지
   // 않고 완전히 빈 배열이어야 한다 - 무슨 일이 있었나요?의 답으로
   // placeholder 원문을 노출하는 것도, 근거 없는 내용을 지어내 채우는 것도
@@ -188,7 +192,7 @@ function loadEBNews() {
   };
   const rShort = EBNews.buildSummary(tooShortArticle);
   rShort.bullets.forEach((b) => assert.strictEqual(b.indexOf('속보'), -1, '너무 짧은 description도 content로 취급되면 안 된다'));
-  assert.strictEqual(rShort.bullets[0], '연합뉴스에서 보도한 소식입니다.');
+  assert.strictEqual(rShort.bullets[0], tooShortArticle.title + '에 대한 핵심 요약입니다.');
 
   // 다른 언론사명으로도 동일 패턴("{source} 보도")이 일반적으로 걸러지는지
   // 확인 - 문자열 하나만 하드코딩해서 막은 게 아님을 보장.
@@ -203,12 +207,20 @@ function loadEBNews() {
   // "..."/"…"로 끝나 있으면 그 기호 자체가 bullet/Q&A에 노출되던 문제.
   // Regression (실제 프로덕션 버그 #2, 그 첫 수정 자체의 회귀): 말줄임표를
   // 지우면서 "이후 내용 전체 삭제" + "문장이 완결됐는지 추측해서 판단"하는
-  // 방식으로 고쳤더니, 실제 기사 내용까지 대량으로 사라졌다 - 이번에는
-  // 말줄임표 "기호"만 제거하고 앞뒤 실제 텍스트는 전부 보존해야 한다.
-  // ---------------------------------------------------------------------
+  // 방식으로 고쳤더니, 실제 기사 내용까지 대량으로 사라졌다 - 그래서 한동안
+  // 말줄임표 "기호"만 제거하고 앞뒤 실제 텍스트는 전부 보존하는 방식이었다.
+  // Regression (실제 프로덕션 버그 #3, 그 두 번째 수정의 재발견): 그 결과
+  // "...금리가 오르면서 금융불안이" 처럼 말줄임표만 사라지고 문장이 중간에
+  // 뚝 끊긴 채로 그대로 노출되는 사례가 실사용 화면(스크린샷)에서 다시
+  // 보고됐다 - 사용자가 "완결된 문장으로만 보이게" 명시적으로 요청해, 이제는
+  // (a) 앞에 완결된 real 문장이 있으면 그것만 쓰고 뒤의 잘린 조각은 버리며
+  // (b) 텍스트 전체가 잘린 조각뿐이면(완결된 문장이 하나도 없으면) 자의적
+  // 추측 없이 제목 기반 문구로 대체한다 - #2가 문제였던 "문장이 완결됐는지
+  // 추측"과 다르게, 실제 종결부호(.!?)가 있는지 없는지는 추측이 아니라
+  // 객관적 사실이므로 안전하다 (stripTrailingTruncatedFragment() 참고).
 
-  // TEST 1: 문장 전체가 "..."로 끝나는 스니펫이어도, 말줄임표 기호만
-  // 사라지고 앞의 실제 텍스트는 전부 보존되어야 한다 (삭제하지 않는다).
+  // TEST 1: 완결된 real 문장이 하나도 없이 전체가 "..."로 끝나는 스니펫이면,
+  // 잘린 조각을 그대로 노출하지 않고 제목 기반 문구로 대체해야 한다.
   {
     const article = {
       title: '연준 9월 금리 동결 전망',
@@ -218,8 +230,10 @@ function loadEBNews() {
     const r = EBNews.buildSummary(article);
     const combined = r.bullets.join(' ') + ' ' + r.qna.map((q) => q.a).join(' ');
     assert.strictEqual(/\.{3,}|…/.test(combined), false, 'fallback bullet/qna에 말줄임표 기호가 남아있으면 안 된다');
-    assert.notStrictEqual(combined.indexOf('시장에서는 향후'), -1, '말줄임표 기호만 제거되어야 하고, 그 앞의 실제 내용은 삭제되면 안 된다');
-    assert.strictEqual(r.bullets.length, 1, '억지로 여러 개로 쪼개거나 내용을 부풀리지 않는다');
+    assert.strictEqual(combined.indexOf('시장에서는 향후'), -1, '완결되지 않은 잘린 조각이 그대로 노출되면 안 된다');
+    assert.strictEqual(r.bullets.length, 1, '완결된 문장이 없으면 지어내지 않고 제목 기반 문구 하나만 사용한다');
+    assert.strictEqual(r.bullets[0], article.title + '에 대한 핵심 요약입니다.');
+    assert.strictEqual(r.qna.length, 0, '완결된 real 문장이 없으므로 qna를 억지로 채우지 않는다');
   }
 
   // TEST 2: 말줄임표가 없는 정상 문장 두 개는 완전히 무변경으로 보존되어야 한다.
@@ -233,10 +247,11 @@ function loadEBNews() {
     assert.deepStrictEqual(Array.from(r.bullets), ['국제유가는 5% 상승했다. 미국 증시는 하락했다.'], '요약 bullet은 실제 문장들을 하나로 합친 것이어야 한다');
   }
 
-  // TEST 3 (실제 버그 재현 - 화면 스크린샷과 동일한 사례): 말줄임표
-  // 기호만 사라지고, 그 앞에 있던 실제 기사 내용("전망이 더욱 굳어질
-  // 가능성이" 등)은 절대 삭제되면 안 된다. "잘못된 결과"는 이 내용을
-  // 과도하게 잘라내는 것이다 (예: "...이를 웃돌 경우"까지만 남기는 식).
+  // TEST 3 (완결된 문장이 없는 케이스 - 화면 스크린샷과 동일한 사례): 이
+  // description도 실제 종결부호(.!?)가 전혀 없는 하나의 통짜 잘린 조각이므로,
+  // TEST 1과 동일하게 제목 기반 문구로 대체되어야 한다 - "전망이 더욱
+  // 굳어질 가능성이"처럼 중간에 뚝 끊긴 텍스트를 그대로 보여주는 것 자체가
+  // 사용자가 신고한 버그다.
   {
     const article = {
       title: '8월 CPI 발표 앞둔 시장',
@@ -246,21 +261,21 @@ function loadEBNews() {
     const r = EBNews.buildSummary(article);
     const combined = r.bullets.join(' ') + ' ' + r.qna.map((q) => q.a).join(' ');
     assert.strictEqual(/\.{3,}|…/.test(combined), false, '말줄임표 기호가 노출되면 안 된다');
-    assert.notStrictEqual(combined.indexOf('전망이 더욱 굳어질 가능성이'), -1, '말줄임표 바로 앞의 실제 내용이 과도하게 잘려나가면 안 된다');
-    assert.notStrictEqual(combined.indexOf('예상 수준이거나 이를 웃돌 경우'), -1, '문장 앞부분 내용도 삭제되면 안 된다');
+    assert.strictEqual(combined.indexOf('전망이 더욱 굳어질 가능성이'), -1, '중간에 끊긴 조각이 그대로 노출되면 안 된다');
+    assert.strictEqual(r.bullets[0], article.title + '에 대한 핵심 요약입니다.');
   }
 
   // TEST 4: Gemini 결과에 "..."가 포함되면 evaluateGeminiSummary()가
   // invalid 처리한다는 것은 gemini-summary.js 쪽에서 이미 검증했다
   // (tests/gemini-summary.test.js). 그 invalid 이후 실제로 화면에 쓰이는
   // fallback 경로(news-data.js의 buildSummary())도 같은 원본 description을
-  // 받았을 때 말줄임표 기호를 노출하지 않으면서 내용도 삭제하지 않는지 -
-  // 위 TEST 1/3이 바로 그 fallback 경로 자체이므로, 두 파일이 서로 다른
+  // 받았을 때 말줄임표 기호도, 중간에 끊긴 조각도 노출하지 않는지 - 위
+  // TEST 1/3이 바로 그 fallback 경로 자체이므로, 두 파일이 서로 다른
   // 런타임(Node 서버 / 브라우저)임에도 최종 사용자에게는 어느 경로로도
-  // "..."가 보이지 않으면서 내용도 보존됨을 함께 보장한다.
+  // "..."도, 완결되지 않은 문장도 보이지 않음을 함께 보장한다.
 
-  // TEST 5: Q&A 답변에서도 말줄임표 기호는 노출되지 않으면서 내용은
-  // 보존되어야 한다.
+  // TEST 5: 완결된 real 문장이 하나도 없는 경우, Q&A도 억지로 채우지 않고
+  // 완전히 비어 있어야 한다 (TEST 1의 placeholder 케이스와 동일한 원칙).
   {
     const article = {
       title: '8월 CPI 발표 앞둔 시장',
@@ -268,10 +283,7 @@ function loadEBNews() {
       category: '금리', source: '글로벌이코노믹', keywords: []
     };
     const r = EBNews.buildSummary(article);
-    assert.strictEqual(r.qna.length, 1);
-    assert.strictEqual(r.qna[0].q, '무슨 일이 있었나요?');
-    assert.strictEqual(/\.{3,}|…/.test(r.qna[0].a), false, 'Q&A 답변에 말줄임표 기호가 남아있으면 안 된다: "' + r.qna[0].a + '"');
-    assert.notStrictEqual(r.qna[0].a.indexOf('전망이 더욱 굳어질 가능성이'), -1, 'Q&A 답변의 실제 내용도 삭제되면 안 된다');
+    assert.strictEqual(r.qna.length, 0, '완결된 real 문장이 없으므로 qna를 지어내지 말고 비워야 한다');
   }
 
   // sanitizeDescriptionForSummary()가 실제 기사 내용의 숫자/날짜/금리 등을

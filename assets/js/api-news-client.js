@@ -215,18 +215,65 @@
   // here rather than depending on window.EBNews - see this file's header
   // comment on why buildDeepResearch() stays self-contained). Returns the
   // first real sentence of the description, or null when there isn't one.
+  //
+  // Real production bug this fixes: the old regex's `[.!?]+` greedily
+  // swallowed a decimal point ("0.25%p" -> stopped at "0.") and NAVER's own
+  // trailing "..."/"…" snippet-truncation marker alike, treating either as
+  // if it were a real sentence end - shown verbatim in Deep Research's
+  // preview points/detail accordion as an obviously cut-off fragment
+  // ("금융안정국장은 "금리가 0."). Both are masked with same-length 'x'
+  // placeholders first (keeps index/length math against the real `desc`
+  // valid) so only a genuine . / ! / ? - one followed by whitespace or
+  // end-of-string, same rule news-data.js's splitSentences() uses - can
+  // ever end the returned sentence.
   function firstRealSentence(article) {
     var desc = String(article.description || '').trim();
     if (!desc || (article.source && desc === article.source + ' 보도') || desc.length < 20) return null;
-    var match = desc.match(/[^.!?]+[.!?]+/);
-    return match ? match[0].trim() : desc;
+    var masked = desc
+      .replace(/(\d)\.(\d)/g, '$1x$2')
+      .replace(/\.{3,}|…/g, function (m) { return new Array(m.length + 1).join('x'); });
+    var match = masked.match(/[^.!?]+[.!?](?=\s|$)/);
+    if (match) return desc.slice(0, match[0].length).trim();
+    // No genuine sentence-ending punctuation survived masking. If the
+    // description never had any terminator-class character at all, it's
+    // simply a real sentence that doesn't end in punctuation (common in
+    // short Korean news snippets) - use it whole, exactly as before. If it
+    // DID have one (only decimal points and/or a truncation marker), there
+    // is no genuine complete sentence available - say nothing rather than
+    // ever returning a fragment that stops mid-thought.
+    return /[.!?]/.test(desc) ? null : desc;
+  }
+
+  // Same masking approach as firstRealSentence() above, applied to the WHOLE
+  // description (not just its first sentence) for buildDeepResearch()'s
+  // `summary` field, which used to use article.description completely
+  // as-is - showing the "{source} 보도" placeholder verbatim, or NAVER's
+  // own truncated tail ("...금리가 오르면서 금융불안이...") unmodified, in
+  // Deep Research's detail-accordion body text. Drops only the incomplete
+  // trailing fragment after a truncation marker (never a mid-text "..." -
+  // see news-data.js's stripTrailingTruncatedFragment() for why that
+  // distinction matters), keeping every real, complete sentence before it.
+  function stripTrailingTruncatedFragment(text) {
+    var trimmed = String(text || '').trim();
+    var match = trimmed.match(/^([\s\S]*?)(\.{3,}|…)\s*$/);
+    if (!match) return trimmed;
+    var before = match[1];
+    var masked = before.replace(/\.{3,}|…/g, function (m) { return new Array(m.length + 1).join('x'); });
+    var lastReal = masked.match(/^[\s\S]*[.!?](?=\s|$)/);
+    return lastReal ? before.slice(0, lastReal[0].length).trim() : '';
+  }
+
+  function buildSummaryFallback(article) {
+    var isPlaceholder = article.description && article.source && String(article.description).trim() === article.source + ' 보도';
+    var cleaned = isPlaceholder ? '' : stripTrailingTruncatedFragment(article.description);
+    return cleaned || (article.title + '에 대한 심층 분석입니다.');
   }
 
   function buildDeepResearch(article) {
     var category = article.category || '경제';
     var keywords = article.keywords && article.keywords.length ? article.keywords : [category];
     return {
-      summary: article.description || (article.title + '에 대한 심층 분석입니다.'),
+      summary: buildSummaryFallback(article),
       // keyPoints[0] used to just repeat article.title verbatim - redundant
       // with the page's own headline shown just above it, and Google News
       // RSS titles are sometimes terse/awkwardly phrased on their own,

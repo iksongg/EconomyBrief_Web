@@ -33,9 +33,7 @@
   // main.html/newsfeed.html don't load it). Catches the exact synthetic
   // "{source} 보도" string server.js's mapRssItemToProviderShape() generates
   // before NAVER enrichment runs (and NAVER leaves in place for any article
-  // it couldn't confidently match) - real bug this fixes: that raw fragment
-  // ("Vietnam.vn 보도", "연합뉴스 보도"...) was being shown verbatim as if it
-  // were the article's actual description.
+  // it couldn't confidently match).
   function looksLikeRealDescription(article) {
     var desc = String((article && article.description) || '').trim();
     if (!desc) return false;
@@ -44,17 +42,124 @@
     return true;
   }
 
+  // Same noise-removal patterns as news-data.js's sanitizeDescriptionForSummary()
+  // (bylines/timestamps/photo captions/screen-number tags NAVER's own
+  // snippets carry) - duplicated here for the same cross-file reason
+  // looksLikeRealDescription() above already is (this file intentionally
+  // has no dependency on news-data.js).
+  function cleanNewsNoise(text) {
+    var t = String(text || '');
+    t = t.replace(/\[출처\s*[:：][^\]]*\]/g, ' ');
+    t = t.replace(/\(출처\s*[:：][^)]*\)/g, ' ');
+    t = t.replace(/\[사진\s*=[^\]]*\]/g, ' ');
+    t = t.replace(/\(사진\s*=[^)]*\)/g, ' ');
+    t = t.replace(/[([]?화면번호\s*\d+[)\]]?/g, ' ');
+    t = t.replace(/자료화면/g, ' ');
+    t = t.replace(/\[(앵커|기자|리포트|출연|스튜디오)\]/g, ' ');
+    t = t.replace(/[가-힣]{2,4}\s*(기자|특파원)\s*=\s*/g, ' ');
+    t = t.replace(/(입력|수정|전송|송고)\s*(시간|일시)?\s*[:：]?\s*\d{4}[.\-]\s*\d{1,2}[.\-]\s*\d{1,2}\.?\s*(오전|오후)?\s*\d{1,2}[:시]\s*\d{1,2}분?/g, ' ');
+    t = t.replace(/(오전|오후)?\s*\d{1,2}시\s*(\d{1,2}분)?\s*현재/g, ' ');
+    t = t.replace(/현재\s*시각/g, ' ');
+    return t.replace(/\s{2,}/g, ' ').trim();
+  }
+
+  // NAVER's search-snippet API caps length and appends "..."/"…" when it
+  // cuts a sentence off mid-thought. Only a TRAILING marker (the very last
+  // thing in the string) means that; a mid-text one is the original
+  // article's own editorial pause within an otherwise complete sentence and
+  // must never be treated the same way (dropping real content just because
+  // an earlier "..." appears somewhere is exactly the "deleted large
+  // amounts of real content" regression news-data.js's own history warns
+  // about - see its stripTrailingTruncatedFragment() comment). Drops only
+  // the incomplete tail back to the last genuine sentence ending (if any) -
+  // never guesses or fabricates what came after.
+  function stripTrailingTruncatedFragment(text) {
+    var trimmed = String(text || '').trim();
+    var match = trimmed.match(/^([\s\S]*?)(\.{3,}|…)\s*$/);
+    if (!match) return trimmed;
+    var before = match[1];
+    var masked = before.replace(/\.{3,}|…/g, function (m) { return new Array(m.length + 1).join('x'); });
+    var lastReal = masked.match(/^[\s\S]*[.!?](?=\s|$)/);
+    return lastReal ? before.slice(0, lastReal[0].length).trim() : '';
+  }
+
+  // Returns the first genuinely complete sentence of a cleaned description,
+  // or null when none exists - never a raw substring cut, never a fragment
+  // that stops mid-thought, and never mistaking a decimal point ("0.25%p")
+  // or an ellipsis run for real punctuation (both masked with same-length
+  // placeholders first so the final slice comes from the untouched text).
+  function firstCompleteSentence(text) {
+    var cleaned = stripTrailingTruncatedFragment(text).replace(/\.{3,}|…/g, ' ').replace(/\s{2,}/g, ' ').trim();
+    if (!cleaned) return null;
+    var masked = cleaned.replace(/(\d)\.(\d)/g, '$1x$2');
+    var match = masked.match(/[^.!?]+[.!?](?=\s|$)/);
+    if (match) return cleaned.slice(0, match[0].length).trim();
+    // No genuine terminator survived masking. A description with NO
+    // terminator-class character anywhere is simply a real sentence that
+    // never ends in punctuation (common in short NAVER snippets) - use it
+    // whole. Otherwise (only decimal points and/or a truncation marker)
+    // there is no complete sentence to use.
+    return /[.!?]/.test(cleaned) ? null : cleaned;
+  }
+
+  // Converts a small, curated set of the most common Korean news
+  // sentence-final endings (plain "다" form) to their polite 합니다체
+  // equivalent, e.g. "동결했다." -> "동결했습니다.". Deliberately NOT a
+  // general Korean conjugation engine - handling every irregular stem
+  // (ㄷ/ㅂ/ㅅ/르 irregulars etc.) correctly would risk producing a WRONG or
+  // ungrammatical ending, which is its own kind of fabrication. Only ever
+  // rewrites a matched SUFFIX; an ending outside this list is returned
+  // completely unchanged - keeping a sentence in its original (still
+  // perfectly valid, just less formal) tone is always safer than guessing.
+  var POLITE_ENDING_MAP = [
+    [/했다\.?$/, '했습니다.'],
+    [/였다\.?$/, '였습니다.'],
+    [/았다\.?$/, '았습니다.'],
+    [/었다\.?$/, '었습니다.'],
+    [/한다\.?$/, '합니다.'],
+    [/된다\.?$/, '됩니다.'],
+    [/이다\.?$/, '입니다.'],
+    [/있다\.?$/, '있습니다.'],
+    [/없다\.?$/, '없습니다.'],
+    [/보인다\.?$/, '보입니다.'],
+    [/전망이다\.?$/, '전망입니다.'],
+    [/분석이다\.?$/, '분석입니다.']
+  ];
+  function toPoliteEnding(sentence) {
+    var s = String(sentence || '').trim();
+    for (var i = 0; i < POLITE_ENDING_MAP.length; i++) {
+      if (POLITE_ENDING_MAP[i][0].test(s)) return s.replace(POLITE_ENDING_MAP[i][0], POLITE_ENDING_MAP[i][1]);
+    }
+    return s;
+  }
+
+  // Builds a short, complete-reading card description straight from the raw
+  // NAVER/RSS description, when no Gemini summary is available yet: clean
+  // known noise -> pull out the first real, properly-terminated sentence ->
+  // best-effort polite-ending rewrite. Never a raw substring cut, never a
+  // mid-sentence fragment, never "..."/"…" used to disguise one, and never
+  // an invented fact or connector - if no genuine complete sentence can be
+  // found in the available text at all, returns null so the caller shows
+  // nothing rather than a fabricated placeholder line.
+  function buildNaturalDescription(article) {
+    if (!looksLikeRealDescription(article)) return null;
+    var sentence = firstCompleteSentence(cleanNewsNoise(article.description));
+    if (!sentence) return null;
+    return toPoliteEnding(sentence);
+  }
+
   // Only trusts a Gemini summary that actually finished validating
   // (summaryStatus === 'generated', non-empty aiSummary) - never the
-  // article's title or an invented sentence. If neither a real description
-  // nor a validated Gemini summary exists yet, returns '' so the caller
-  // clears the field instead of ever showing the placeholder.
+  // article's title or an invented sentence. Falls back to a naturally
+  // extracted real sentence from the raw description, then to '' (never a
+  // placeholder phrase like "OO에서 보도한 소식입니다") so the caller clears
+  // the field instead of ever showing fabricated or truncated-looking text.
   function resolveCardDescription(article) {
-    if (looksLikeRealDescription(article)) return article.description;
     if (article && article.summaryStatus === 'generated' && Array.isArray(article.aiSummary) && article.aiSummary[0]) {
       return article.aiSummary[0];
     }
-    return '';
+    var natural = buildNaturalDescription(article);
+    return natural || '';
   }
 
   // Unlike setText() above (which deliberately leaves an unfilled slot's
