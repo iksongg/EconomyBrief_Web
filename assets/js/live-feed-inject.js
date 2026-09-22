@@ -133,18 +133,134 @@
     return s;
   }
 
+  // ---- rule-based compression: a real, complete sentence that's still too
+  // long/wordy for a 2-line card down to a shorter one - never by cutting
+  // mid-sentence or inventing new words, only by removing or restating
+  // clauses whose SHAPE is common and well-defined enough to handle safely
+  // without a real language model (which is what Gemini, already priority
+  // 1, is for). Every rule below either (a) drops a whole trailing clause
+  // that adds hedging/outlook rather than the reported fact, or (b)
+  // rewrites one specific, narrow connector pattern into its established
+  // plain-language equivalent - never a free-form paraphrase.
+  var SUMMARY_TARGET_MAX_LENGTH = 70;
+
+  // Korean news commonly appends an analyst's forecast/speculation after
+  // the actual reported fact ("...했으며 향후 ~할 가능성이 제기된다"). Only
+  // a connector clause whose OWN tail contains a recognizable hedge/outlook
+  // word is dropped - a bare "-며" joining two coordinate FACTS is left
+  // alone. The dropped connector is restored to its plain sentence-final
+  // form (e.g. "있으며" -> "있다") at the cut point, never just deleted
+  // outright (which would leave a dangling non-sentence).
+  var OUTLOOK_KEYWORDS = ['전망', '가능성', '분석', '우려', '관측', '제기된다', '보인다', '풀이된다', '분석된다', '전망된다', '관측된다', '예상된다', '것으로'];
+  // "하고" (only this literal connector, never any other "-고" ending) maps
+  // to "했다" safely because it can ONLY ever derive from a "~하다"-class
+  // verb ("육성하고" <- "육성하다", "발표하고" <- "발표하다" etc.) - unlike
+  // other "-고" endings ("먹고", "가고"...), which come from irregular-stem
+  // verbs where restoring the right final form isn't this mechanical, so
+  // those are deliberately NOT included here.
+  var CONNECTOR_TO_FINAL = { '있으며': '있다', '이며': '이다', '하며': '한다', '되며': '된다', '보이며': '보인다', '하고': '했다' };
+  // "-면서" has no single clean "restore to final form" mapping (unlike the
+  // others), so it is recognized here only to correctly locate outlook
+  // clauses that start with it - never used as a cut point itself.
+  var CONNECTOR_PATTERN = '(있으며|이며|하며|되며|보이며|하고|(?:[가-힣]+)면서)';
+
+  function hasOutlookKeyword(text) {
+    return OUTLOOK_KEYWORDS.some(function (kw) { return text.indexOf(kw) !== -1; });
+  }
+
+  function trimTrailingOutlookClause(sentence) {
+    var re = new RegExp(CONNECTOR_PATTERN, 'g');
+    var lastCut = null;
+    var m;
+    while ((m = re.exec(sentence))) {
+      if (hasOutlookKeyword(sentence.slice(re.lastIndex))) lastCut = { index: m.index, connector: m[1] };
+    }
+    if (!lastCut) return sentence;
+    var finalForm = CONNECTOR_TO_FINAL[lastCut.connector];
+    if (!finalForm) return sentence; // the qualifying cut point was a "-면서" - no safe final form, skip rather than guess
+    var trimmed = (sentence.slice(0, lastCut.index) + finalForm).trim();
+    return trimmed.length >= 20 ? trimmed : sentence; // too little would remain - not worth cutting
+  }
+
+  // A precomposed Hangul syllable's Unicode code point directly encodes
+  // whether it has a final consonant (받침) - used here only to pick the
+  // grammatically correct particle (으로 vs 로), never guessed.
+  function hasFinalConsonant(syllable) {
+    var code = syllable.charCodeAt(0) - 0xAC00;
+    if (code < 0 || code > 11171) return false;
+    return (code % 28) !== 0;
+  }
+
+  // "[NP]이/가 이어지면서 X" -> "[NP]으로/로 X" - e.g. "지정학적 불안이
+  // 이어지면서 국제유가가 상승하고 있다" -> "지정학적 불안으로 국제유가가
+  // 상승하고 있다". A semantically-equivalent compression ("as NP
+  // continues" ~ "due to NP") for exactly this one well-defined connector -
+  // never a general paraphrase engine.
+  function simplifyContinuationConnector(sentence) {
+    var m = sentence.match(/^(.*?)(이|가)\s*이어지면서\s*/);
+    if (!m) return sentence;
+    var np = m[1];
+    var particle = hasFinalConsonant(np.charAt(np.length - 1)) ? '으로' : '로';
+    return (np + particle + ' ' + sentence.slice(m[0].length)).trim();
+  }
+
+  // "OOO세를 보이고/보이며 있다" (a very common Korean market-report idiom,
+  // e.g. "상승세를 보이고 있다") -> "OOO하고/하며 있다" (e.g. "상승하고
+  // 있다") - restricted to a curated list of stems where "OOO하다" is a
+  // real, common verb, never a general noun-to-verb converter (which could
+  // produce an ungrammatical result for a stem this doesn't apply to).
+  var TREND_VERB_STEMS = ['상승', '하락', '급등', '급락', '반등', '출렁'];
+  function simplifyTrendVerbPhrase(sentence) {
+    var re = new RegExp('(' + TREND_VERB_STEMS.join('|') + ')세(를|가)?\\s*보이(고|며)', 'g');
+    return sentence.replace(re, function (whole, stem, particle, ending) { return stem + '하' + ending; });
+  }
+
+  // "발표했으며"/"공개했으며" style (완료형 + -으며) -> "발표하며"/"공개하며"
+  // (동사원형 + -며) - the standard headline-style compression for THIS one
+  // "-했으며" pattern specifically (only safe for the 하다-verb class; other
+  // verb classes' past-tense "-았/었으며" are NOT touched, since converting
+  // those to a "-하며" form would be ungrammatical).
+  function simplifyCompletedActionConnector(text) {
+    return text.replace(/했으며/g, '하며');
+  }
+
+  // Last-resort length safety net: if the sentence is still over budget
+  // after every rule above, cuts at the LAST occurrence of one of the same
+  // five safe connectors (restored to its plain final form, exactly like
+  // trimTrailingOutlookClause) - regardless of whether its tail happens to
+  // contain a hedge word. Only ever removes a clause using an established,
+  // reversible connector mapping; if no such connector exists anywhere,
+  // returns the sentence unchanged rather than force a broken cut.
+  function shortenByLength(sentence, maxLen) {
+    if (sentence.length <= maxLen) return sentence;
+    var re = /(있으며|이며|하며|되며|보이며|하고)/g;
+    var lastGood = null;
+    var m;
+    while ((m = re.exec(sentence))) {
+      if (m.index + m[1].length <= maxLen + 10) lastGood = m;
+    }
+    if (!lastGood) return sentence;
+    return (sentence.slice(0, lastGood.index) + CONNECTOR_TO_FINAL[lastGood[1]]).trim();
+  }
+
   // Builds a short, complete-reading card description straight from the raw
   // NAVER/RSS description, when no Gemini summary is available yet: clean
   // known noise -> pull out the first real, properly-terminated sentence ->
-  // best-effort polite-ending rewrite. Never a raw substring cut, never a
-  // mid-sentence fragment, never "..."/"…" used to disguise one, and never
-  // an invented fact or connector - if no genuine complete sentence can be
-  // found in the available text at all, returns null so the caller shows
-  // nothing rather than a fabricated placeholder line.
+  // compress it with the narrow, safe rules above -> best-effort
+  // polite-ending rewrite. Never a raw substring cut, never a mid-sentence
+  // fragment, never "..."/"…" used to disguise one, and never an invented
+  // fact or connector - if no genuine complete sentence can be found in the
+  // available text at all, returns null so the caller shows nothing rather
+  // than a fabricated placeholder line.
   function buildNaturalDescription(article) {
     if (!looksLikeRealDescription(article)) return null;
     var sentence = firstCompleteSentence(cleanNewsNoise(article.description));
     if (!sentence) return null;
+    sentence = simplifyCompletedActionConnector(sentence);
+    sentence = trimTrailingOutlookClause(sentence);
+    sentence = simplifyContinuationConnector(sentence);
+    sentence = simplifyTrendVerbPhrase(sentence);
+    sentence = shortenByLength(sentence, SUMMARY_TARGET_MAX_LENGTH);
     return toPoliteEnding(sentence);
   }
 
