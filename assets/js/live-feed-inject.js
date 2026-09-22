@@ -449,14 +449,32 @@
     if (!isMain && !isFeed) return;
     if (!window.EBApiNews) return;
 
+    // Real production request: an article with no NAVER match AND no Gemini
+    // summary yet has nothing real to show at all - its card ends up
+    // linking to an article.html/deep-research.html that can only fall
+    // back to a generic "OOO에 대한 핵심 요약입니다" line, which reads as
+    // empty even though it's honest. Rather than ever link to that
+    // experience, such articles are simply left out of the rendered list
+    // here - exactly resolveCardDescription()'s own criteria for "is there
+    // anything real to show", reused as a pre-filter instead of a second,
+    // separate check. gemini-summary.js never even attempts a Gemini call
+    // for a placeholder-description article (see its looksLikeRealDescription()
+    // gate), so an article excluded here is not "not ready yet" - it stays
+    // unusable for this entire cache window, not a temporary state.
+    function hasUsableContent(article) {
+      return resolveCardDescription(article) !== '';
+    }
+
     var lastFingerprint = null;
     function renderIfChanged(articles, isInitialLoad) {
       if (!articles || !articles.length) return; // API unavailable: leave existing mock cards untouched
-      var fp = fingerprint(articles);
+      var usable = articles.filter(hasUsableContent);
+      if (!usable.length) return; // nothing with real content this tick - leave existing cards untouched
+      var fp = fingerprint(usable);
       if (!isInitialLoad && fp === lastFingerprint) return; // no new data since the last check
       lastFingerprint = fp;
-      if (isMain) renderMain(articles);
-      if (isFeed) renderNewsfeed(articles);
+      if (isMain) renderMain(usable);
+      if (isFeed) renderNewsfeed(usable);
     }
 
     window.EBApiNews.getArticles().then(function (articles) { renderIfChanged(articles, true); });
