@@ -26,6 +26,48 @@
 
   function setText(el, value) { if (el && value) el.textContent = value; }
 
+  // Same "is this real content, or just a placeholder" check gemini-summary.js/
+  // news-data.js/api-news-client.js already apply elsewhere (kept in sync
+  // deliberately, duplicated here rather than depending on window.EBNews -
+  // this file intentionally has no dependency on news-data.js since
+  // main.html/newsfeed.html don't load it). Catches the exact synthetic
+  // "{source} 보도" string server.js's mapRssItemToProviderShape() generates
+  // before NAVER enrichment runs (and NAVER leaves in place for any article
+  // it couldn't confidently match) - real bug this fixes: that raw fragment
+  // ("Vietnam.vn 보도", "연합뉴스 보도"...) was being shown verbatim as if it
+  // were the article's actual description.
+  function looksLikeRealDescription(article) {
+    var desc = String((article && article.description) || '').trim();
+    if (!desc) return false;
+    if (article.source && desc === article.source + ' 보도') return false;
+    if (desc.length < 20) return false;
+    return true;
+  }
+
+  // Only trusts a Gemini summary that actually finished validating
+  // (summaryStatus === 'generated', non-empty aiSummary) - never the
+  // article's title or an invented sentence. If neither a real description
+  // nor a validated Gemini summary exists yet, returns '' so the caller
+  // clears the field instead of ever showing the placeholder.
+  function resolveCardDescription(article) {
+    if (looksLikeRealDescription(article)) return article.description;
+    if (article && article.summaryStatus === 'generated' && Array.isArray(article.aiSummary) && article.aiSummary[0]) {
+      return article.aiSummary[0];
+    }
+    return '';
+  }
+
+  // Unlike setText() above (which deliberately leaves an unfilled slot's
+  // existing static mock text untouched), a description that resolves to
+  // "no real content yet" must actively clear whatever text is already
+  // there (mock, or a stale previous poll's placeholder) rather than ever
+  // leave a fabricated/placeholder sentence showing. Only empties the text
+  // node - the surrounding CSS/layout is completely unchanged.
+  function setDescription(el, article) {
+    if (!el) return;
+    el.textContent = resolveCardDescription(article);
+  }
+
   function shortDate(article) {
     var d = new Date(article.publishedAt || '');
     if (isNaN(d.getTime())) return article.date || '발행 시간 확인 필요';
@@ -84,14 +126,14 @@
   function fillHighlightCard(card, article) {
     card.setAttribute('data-article-id', article.id);
     setText(card.querySelector('.headline'), article.title);
-    setText(card.querySelector('.body'), article.description);
+    setDescription(card.querySelector('.body'), article);
     setTags(card.querySelector('.tags'), article);
   }
 
   function fillNewsListItem(item, article) {
     item.setAttribute('data-article-id', article.id);
     setText(item.querySelector('.title'), article.title);
-    setText(item.querySelector('.desc'), article.description);
+    setDescription(item.querySelector('.desc'), article);
     setText(item.querySelector('.byline span:last-child'), article.source + ' · ' + shortDate(article));
     setPressLogo(item.querySelector('.byline'), article);
     setImage(item.querySelector('.thumb'), article);
@@ -139,7 +181,7 @@
     card.setAttribute('data-category', article.category);
     setText(card.querySelector('.tl-time'), shortDate(article));
     setText(card.querySelector('.tl-title'), article.title);
-    setText(card.querySelector('.tl-desc'), article.description);
+    setDescription(card.querySelector('.tl-desc'), article);
     setTags(card.querySelector('.tl-tags'), article);
     setImage(card.querySelector('.tl-thumb'), article);
   }
@@ -164,12 +206,19 @@
   }
 
   // Fingerprints the parts of an article list that actually change the DOM
-  // (id/title/publishedAt/url) so a poll tick that returns the exact same
-  // data can skip calling renderMain/renderNewsfeed entirely instead of
-  // re-running setText/setAttribute on every card for no visible change.
+  // (id/title/publishedAt/url/summaryStatus) so a poll tick that returns the
+  // exact same data can skip calling renderMain/renderNewsfeed entirely
+  // instead of re-running setText/setAttribute on every card for no visible
+  // change. summaryStatus is included so that a background Gemini summary
+  // finishing AFTER the initial load (server.js's enrichWithGemini runs
+  // async, unrelated to id/title/publishedAt/url) is still treated as "new
+  // data worth re-rendering" - otherwise a card stuck showing an empty
+  // description (no real NAVER description, Gemini not done yet at the time
+  // of the first poll) would never pick up the now-available summary on a
+  // later 60s poll, since nothing else about the article would have changed.
   function fingerprint(articles) {
     return articles.map(function (a) {
-      return a.id + '|' + a.title + '|' + a.publishedAt + '|' + a.url;
+      return a.id + '|' + a.title + '|' + a.publishedAt + '|' + a.url + '|' + a.summaryStatus;
     }).join(';');
   }
 
